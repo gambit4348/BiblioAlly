@@ -28,9 +28,11 @@ class IeeeXTranslator(bibtex.Translator):
             all_keywords = self._all_uncurlied(fields['keywords']).split(';')
             keyword_names = set()
             for keyword_name in all_keywords:
-                name = keyword_name.strip().capitalize()
-                if name not in keyword_names:
-                    keyword_names.add(name)
+                sub_keyword_names = keyword_name.split(',')
+                for sub_keyword_name in sub_keyword_names:
+                    name = sub_keyword_name.strip().capitalize()
+                    if name not in keyword_names:
+                        keyword_names.add(name)
             keyword_names = list(keyword_names)
             for keyword_name in keyword_names:
                 keywords.append(domain.Keyword(name=keyword_name))

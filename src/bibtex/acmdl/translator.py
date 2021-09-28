@@ -21,7 +21,7 @@ class AcmDLTranslator(bibtex.Translator):
         affiliations = self._expand_affiliations(None, authors)
         keywords = []
         if 'keywords' in fields:
-            all_keywords = self._all_uncurlied(fields['keywords']).split(';')
+            all_keywords = self._all_uncurlied(fields['keywords']).split(',')
             keyword_names = set()
             for keyword_name in all_keywords:
                 name = keyword_name.strip().capitalize()
