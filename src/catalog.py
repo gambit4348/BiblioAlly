@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import select
 class Catalog:
     translators = dict()
 
-    def __init__(self, catalog_path=None, echo=True, future=True):
+    def __init__(self, catalog_path=None, echo=False, future=True):
         self._engine = None
         self._session = None
         if catalog_path is not None:
@@ -20,33 +20,99 @@ class Catalog:
         Add a document summary to the catalog, that will later be persisted by calling the Catalog.commit() method.
 
         Parameters:
-        -summary (domain.DocumentSummary): the instance passed, that must be already linked to the document it belongs
-        to (DocumentSummary.document).
+            summary (domain.DocumentSummary): the instance passed, that must be already linked to the document it
+            belongs to (DocumentSummary.document).
 
         Returns:
-        domain.DocumentSummary: The same instance passed.
+            domain.DocumentSummary: The same instance passed.
         """
         self._session.add(summary)
         return summary
 
     def author_by(self, **kwargs) -> domain.Author:
         """
-        Returns one instance, if any, of Author that corresponds to the criteria passed.
+        Query-by-example for one single author.
+
+        Parameters:
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instance.
+
+        Returns:
+            one instance, if any, of Author that corresponds to the criteria passed.
 
         If no instance can be found with the criteria specified, the return value is None. On the other hand, if
         more than one instance corresponds to the criteria specified, one single instance is returned but there is
         no way to predict which one.
+
+        Example:
+            catalog.author_by(short_name='Einstein, A.')
         """
         return self._session.execute(select(domain.Author).filter_by(**kwargs)).scalars().first()
 
     def authors_by(self, **kwargs):
+        """
+        Query-by-example for authors.
+
+        Parameters:
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instances.
+
+        Returns:
+            a list containing all the Authors, if any. that correspond to the criteria passed.
+
+        If no instance can be found with the criteria specified, an empty list si returned.
+
+        Example:
+            catalog.authors_by(short_name='Einstein, A.')
+        """
         return self._session.execute(select(domain.Author).filter_by(**kwargs)).scalars().all()
 
     def document_by(self, tagged_as=None, untagged_as=None, **kwargs):
+        """
+        Query-by-example for one single document.
+
+        Parameters:
+            tagged_as : (optional)
+                a name or a list of names of tags that are required to be assigned to the document.
+            untagged_as : (optional)
+                a name or a list of names of tags that are required to not be assigned to the document.
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instance.
+
+        Returns:
+            one instance, if any, of Document that corresponds to the criteria passed.
+
+        If no instance can be found with the criteria specified, the return value is None. On the other hand, if
+        more than one instance corresponds to the criteria specified, one single instance is returned but there is
+        no way to predict which one.
+
+        Example:
+            catalog.documents_by(tagged_as=catalog.domain.INCLUDED,untagged_as=[catalog.domain.DUPLICATE])
+            catalog.document_by(doi='biblio-ally/10000.0000')
+        """
         stm = self._document_by(tagged_as=tagged_as, untagged_as=untagged_as, **kwargs)
         return self._session.execute(stm).scalars().first()
 
     def documents_by(self, tagged_as=None, untagged_as=None, **kwargs):
+        """
+        Query-by-example for documents.
+
+        Parameters:
+            tagged_as : (optional)
+                a name or a list of names of tags that are required to be assigned to the document.
+            untagged_as : (optional)
+                a name or a list of names of tags that are required to not be assigned to the document.
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instances.
+
+        Returns:
+            a list containing all the Documents, if any. that meet the criteria passed.
+
+        If no instance can be found with the criteria specified, an empty list is returned.
+
+        Example:
+            catalog.documents_by(tagged_as=catalog.domain.INCLUDED,untagged_as=[catalog.domain.DUPLICATE])
+        """
         stm = self._document_by(tagged_as=tagged_as, untagged_as=untagged_as, **kwargs)
         return self._session.execute(stm).scalars().all()
 
@@ -112,20 +178,6 @@ class Catalog:
                     self._tag(loaded_document, domain.TAG_DUPLICATE)
                     loaded_document.original_document = original_document
                 session.add(loaded_document)
-                # documents_found = self.document_by({'title': new_document.title, 'year': new_document.year})
-                # if documents_found is None:
-                #    new_document.tags = {domain.Document.IMPORTED}
-                #    load_count += 1
-                #    self.documents.append(new_document)
-                #    self._save_to_db(new_document)
-                #else:
-                #    for existing_found in documents_found:
-                #        if document_found.generator == new_document.generator:
-                #            update_names = document_found.update_from(new_document)
-                #            if len(update_names) > 0:
-                #                self._save_to_db(document_found)
-                    # new_document.tags = {Document.IMPORTED, Document.DUPLICATE}
-                    # new_document.original_id = document_found.id
         finally:
             self._session.commit()
             base_count = self._session.query(domain.Document).count()
@@ -253,3 +305,46 @@ class Catalog:
             else:
                 new_keyword.import_date = datetime.date.today()
             index += 1
+
+
+def as_dict(documents, fields=None, **kwargs):
+    if type(documents) is not list:
+        documents = [documents]
+    if fields is None:
+        fields = [
+            'id', 'title', 'year', 'journal', 'external_key', 'doi', 'document_type', 'kind',
+            'abstract', 'pages', 'volume', 'number', 'url', 'language', 'generator', 'import_date',
+            'authors', 'keywords', 'tags', 'references', 'reason', 'summary', 'original_document'
+        ]
+    proto_documents = {}
+    for field in fields:
+        proto_documents[field] = []
+
+    for document in documents:
+        for field in fields:
+            value = getattr(document, field)
+            if field in kwargs and callable(kwargs[field]):
+                value = kwargs[field](value)
+            proto_documents[field].append(value)
+    return proto_documents
+
+
+def as_tuple(documents, fields=None, **kwargs):
+    if type(documents) is not list:
+        documents = [documents]
+    if fields is None:
+        fields = [
+            'id', 'title', 'year', 'journal', 'external_key', 'doi', 'document_type', 'kind',
+            'abstract', 'pages', 'volume', 'number', 'url', 'language', 'generator', 'import_date',
+            'authors', 'keywords', 'tags', 'references', 'reason', 'summary', 'original_document'
+        ]
+    doc_tuples = []
+    for document in documents:
+        values = []
+        for field in fields:
+            value = getattr(document, field)
+            if field in kwargs and callable(kwargs[field]):
+                value = kwargs[field](value)
+            values.append(value)
+        doc_tuples.append(tuple(values))
+    return doc_tuples
