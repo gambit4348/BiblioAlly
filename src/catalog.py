@@ -1,5 +1,5 @@
 import datetime
-from . import domain
+import domain
 from functools import reduce
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, aliased
@@ -141,6 +141,11 @@ class Catalog:
 
     def keywords_by(self, **kwargs):
         return self._session.execute(select(domain.Keyword).filter_by(**kwargs)).scalars().all()
+
+    def reasons(self):
+        all_reasons = self._session.execute(select(domain.Reason)).scalars().all()
+        all_reasons.sort(key=lambda item: item.description)
+        return all_reasons
 
     def import_from_file(self, source, filename):
         if source not in Catalog.translators:

@@ -1,3 +1,4 @@
+import datetime
 from sqlalchemy import Table, ForeignKey, Column, Integer, String, Date, Boolean, Text
 from sqlalchemy.orm import registry, relationship
 
@@ -78,7 +79,7 @@ class Author(Base):
 class Document(Base):
     __tablename__ = 'Document'
     id = Column(Integer, primary_key=True)
-    title = Column(String(255), nullable=False)
+    title = Column(String(255, collation='NOCASE'), nullable=False)
     abstract = Column(String, nullable=False)
     external_key = Column(String(128), nullable=False, index=True)
     year = Column(Integer, nullable=False)
@@ -179,8 +180,17 @@ class Reason(Base):
     description = Column(String(255), nullable=False, unique=True)
     import_date = Column(Date, nullable=False)
 
+    def __init__(self, description, import_date=None):
+        Base.__init__(self)
+        self.description = description
+        if import_date is None:
+            self.import_date = datetime.date.today()
+
     def __repr__(self):
         return f'Reason(id={self.id!r}, name={self.description!r})'
+
+    def __str__(self):
+        return self.description
 
 
 class Reference(Base):
