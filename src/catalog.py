@@ -15,16 +15,16 @@ class Catalog:
         if catalog_path is not None:
             self.open(catalog_path, echo, future)
 
-    def add_summary(self, summary: domain.DocumentSummary) -> domain.DocumentSummary:
+    def add_summary(self, summary: domain.DocumentMetadata) -> domain.DocumentMetadata:
         """
         Add a document summary to the catalog, that will later be persisted by calling the Catalog.commit() method.
 
         Parameters:
-            summary (domain.DocumentSummary): the instance passed, that must be already linked to the document it
+            summary (domain.DocumentMetadata): the instance passed, that must be already linked to the document it
             belongs to (DocumentSummary.document).
 
         Returns:
-            domain.DocumentSummary: The same instance passed.
+            domain.DocumentMetadata: The same instance passed.
         """
         self._session.add(summary)
         return summary

@@ -1,11 +1,16 @@
+import datetime
+
 import PySimpleGUI as sg
 import catalog as cat
 import domain
 
 
 BUTTON_EXIT = '-EXIT-'
+
+BUTTON_EDIT_DOC_METADATA = '-BUTTON-EDIT-DOC-METADATA-'
 BUTTON_DOC_PRESELECT = '-DOC-PRESELECT-'
-LABEL_DOC_REJECT = 'LABEL--DOC-REJECT-'
+LABEL_DOC_METADATA = '-LABEL-DOC-METADATA-'
+LABEL_DOC_REJECT = '-LABEL-DOC-REJECT-'
 LIST_DOC_REJECT = '-DOC-REJECT-'
 BUTTON_DOC_RESET = '-DOC-RESET-'
 BUTTON_DOC_SELECT = '-DOC-SELECT-'
@@ -23,6 +28,7 @@ DOC_DOI = '-DOC-DOI-'
 DOC_EXTERNAL_KEY = '-DOC-EXTERNAL-KEY-'
 DOC_KEYWORDS = '-DOC-KEYWORDS-'
 DOC_KIND = '-DOC-KIND-'
+DOC_METADATA = '-DOC-METADATA-'
 DOC_ORIGIN = '-DOC-ORIGIN-'
 DOC_REASON = '-DOC-REASON-'
 DOC_TITLE = '-DOC-TITLE-'
@@ -50,8 +56,9 @@ filter_buttons = [
     BUTTON_TAG_PRE_SELECTED
 ]
 
-label_font = ('Arial', '10', '')
-text_font = ('Arial', '10', 'bold')
+metadata_font = ('Courier New', 9, '')
+label_font = ('Arial', 10, '')
+text_font = ('Arial', 10, 'bold')
 text_color = 'orange'
 button_base_font = 'Arial 10'
 import_color = ('black', 'grey')
@@ -117,7 +124,7 @@ main_layout = [
                 ]),
                 sg.Column([
                     [sg.Text('Keywords', font=label_font)],
-                    [sg.Multiline(key=DOC_KEYWORDS, default_text='', size=(80, 20), disabled=True,
+                    [sg.Multiline(key=DOC_KEYWORDS, default_text='', size=(60, 20), disabled=True,
                                   autoscroll=True)]
                 ]),
             ]
@@ -128,13 +135,23 @@ main_layout = [
                 sg.Button('Pre-Select!', key=BUTTON_DOC_PRESELECT, button_color=preselect_color),
                 sg.Button('Select!', key=BUTTON_DOC_SELECT, button_color=select_color),
                 sg.Button('Reset!', key=BUTTON_DOC_RESET, button_color=import_color),
+            ],
+            [
+                sg.Text('Reject reason', key=LABEL_DOC_REJECT, visible=False),
+                sg.Text('Metadata', key=LABEL_DOC_METADATA, visible=False)
+            ],
+            [
+                sg.Listbox([], size=(74, 20), key=LIST_DOC_REJECT, enable_events=True, visible=False),
+                sg.Multiline(default_text='', key=DOC_METADATA, size=(74, 20), font=metadata_font,
+                             disabled=True, visible=False, autoscroll=True)
+            ],
+            [
+                sg.Button('Edit metadata', key=BUTTON_EDIT_DOC_METADATA, visible=False)
             ]
-            ,
-            [sg.Text('Reject reason', key=LABEL_DOC_REJECT)],
-            [sg.Listbox([], size=(50, 20), enable_events=True, key=LIST_DOC_REJECT)]
         ]),
     ],
 ]
+
 
 class Browser:
     def __init__(self, catalog: cat.Catalog):
@@ -184,6 +201,8 @@ class Browser:
                 self._filter_documents()
                 self._update_table(row_index)
                 self._select_document_by_index(row_index)
+            elif event == BUTTON_EDIT_DOC_METADATA:
+                self._edit_metadata()
             elif self._selected_document is not None:
                 if event == BUTTON_DOC_PRESELECT:
                     self.pre_select_document(self._selected_document)
@@ -249,6 +268,72 @@ class Browser:
                               tags=lambda value: ' '.join([f'[{dt.tag.name}]' for dt in value]))
         return tuples
 
+    def _edit_metadata(self):
+        if self._selected_document is None:
+            return
+
+        BUTTON_METADATA_CANCEL = '-EDIT-METADATA-CANCEL-'
+        BUTTON_METADATA_CONFIRM = '-EDIT-METADATA-CONFIRM-'
+        METADATA_CONTENT = '-EDIT-METADATA-CONTENT-'
+        METADATA_DOC_AUTHORS = '-EDIT-METADATA-AUTHORS-'
+        METADATA_DOC_DOI = '-EDIT-METADATA-DOI-'
+        METADATA_DOC_EXTERNAL_KEY = '-EDIT-METADATA-EXTERNAL-KEY-'
+        METADATA_DOC_ID = '-EDIT-METADATA-ID-'
+        METADATA_DOC_TITLE = '-EDIT-METADATA-TITLE-'
+        METADATA_DOC_YEAR = '-EDIT-METADATA-YEAR-'
+        edit_metadata_layout = [
+            [
+                sg.Text('ID:', font=label_font),
+                sg.Input(key=METADATA_DOC_ID, size=5, readonly=True),
+                sg.Text('Year:', font=label_font),
+                sg.Input(key=METADATA_DOC_YEAR, size=4, readonly=True),
+                sg.Text('Title:', font=label_font),
+                sg.Input(key=METADATA_DOC_TITLE, size=140, readonly=True),
+            ],
+            [
+                sg.Text('Authors:', font=label_font),
+                sg.Input(key=METADATA_DOC_AUTHORS, size=60, readonly=True),
+                sg.Text('DOI:', font=label_font),
+                sg.Input(key=METADATA_DOC_DOI, size=25, readonly=True),
+                sg.Text('External key:', font=label_font),
+                sg.Input(key=METADATA_DOC_EXTERNAL_KEY, size=25, readonly=True),
+            ],
+            [
+                sg.Multiline(key=METADATA_CONTENT, default_text='', font=metadata_font, size=(160, 40), autoscroll=True)
+            ],
+            [
+                sg.Button('Cancel', key=BUTTON_METADATA_CANCEL),
+                sg.Button('Confirm', key=BUTTON_METADATA_CONFIRM)
+            ]
+        ]
+
+        doc = self._selected_document
+        window = sg.Window('Edit Metadata', edit_metadata_layout, resizable=True)
+        event, values = window.read(timeout=1)
+        window[METADATA_DOC_AUTHORS].update(self.author_names(doc.authors))
+        window[METADATA_DOC_DOI].update(doc.doi)
+        window[METADATA_DOC_EXTERNAL_KEY].update(doc.external_key)
+        window[METADATA_DOC_ID].update(doc.id)
+        window[METADATA_DOC_TITLE].update(doc.title)
+        window[METADATA_DOC_YEAR].update(doc.year)
+        if doc.review_metadata is not None:
+            window[METADATA_CONTENT].update(doc.review_metadata.content)
+        while True:
+            event, values = window.read()
+            if event == sg.WINDOW_CLOSED or event == BUTTON_METADATA_CANCEL:
+                break
+            elif event == BUTTON_METADATA_CONFIRM:
+                content = values[METADATA_CONTENT]
+                if doc.review_metadata is not None:
+                    doc.review_metadata.content = content
+                    doc.review_metadata.import_date = datetime.date.today()
+                else:
+                    doc.review_metadata = domain.DocumentMetadata(content)
+                self._catalog.commit()
+                self._window[DOC_METADATA].update(content)
+                break
+        window.close()
+
     def _filter_documents(self):
         self._visible_documents = [document for document in self._all_documents
                                    if self._document_is_in_filter(document, self._active_tags)]
@@ -283,6 +368,7 @@ class Browser:
             self._window[DOC_EXTERNAL_KEY].update('')
             self._window[DOC_KEYWORDS].update('')
             self._window[DOC_KIND].update('')
+            self._window[DOC_METADATA].update('')
             self._window[DOC_ORIGIN].update('')
             self._window[DOC_REASON].update('')
             self._window[DOC_TITLE].update('')
@@ -299,6 +385,8 @@ class Browser:
         self._window[DOC_EXTERNAL_KEY].update(document.external_key)
         self._window[DOC_KEYWORDS].update(self.keyword_names(document.keywords))
         self._window[DOC_KIND].update(document.kind)
+        self._window[DOC_METADATA].update(document.review_metadata.content
+                                          if document.review_metadata is not None else '')
         self._window[DOC_ORIGIN].update(document.generator)
         if document.reason is not None:
             self._window[DOC_REASON].update(document.reason.description)
@@ -308,9 +396,13 @@ class Browser:
         self._window[DOC_YEAR].update(document.year)
         self._window[BUTTON_DOC_PRESELECT].update(disabled=document.is_tagged(domain.TAG_PRE_ACCEPTED))
         self._window[BUTTON_DOC_SELECT].update(disabled=not document.is_tagged(domain.TAG_PRE_ACCEPTED))
-        reject_visible = document.is_tagged(domain.TAG_IMPORTED) or document.is_tagged(domain.TAG_PRE_ACCEPTED)
-        self._window[LABEL_DOC_REJECT].update(visible=reject_visible)
-        self._window[LIST_DOC_REJECT].update(visible=reject_visible)
+        element_visible = document.is_tagged(domain.TAG_IMPORTED) or document.is_tagged(domain.TAG_PRE_ACCEPTED)
+        self._window[LABEL_DOC_REJECT].update(visible=element_visible)
+        self._window[LIST_DOC_REJECT].update(visible=element_visible)
+        element_visible = document.is_tagged(domain.TAG_ACCEPTED)
+        self._window[LABEL_DOC_METADATA].update(visible=element_visible)
+        self._window[DOC_METADATA].update(visible=element_visible)
+        self._window[BUTTON_EDIT_DOC_METADATA].update(visible=element_visible)
 
     def _update_reject_reasons(self):
         self._reject_reasons = self._catalog.reasons()

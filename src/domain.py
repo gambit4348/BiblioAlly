@@ -100,7 +100,8 @@ class Document(Base):
     references = relationship('Reference', cascade='all, delete', back_populates='document')
     reason_id = Column(Integer, ForeignKey('Reason.id'))
     reason = relationship('Reason', uselist=False)
-    summary = relationship('DocumentSummary', uselist=False, back_populates='document', cascade="all, delete-orphan")
+    review_metadata = relationship('DocumentMetadata', uselist=False, back_populates='document',
+                                   cascade="all, delete-orphan")
     original_document_id = Column(Integer, ForeignKey('Document.id'))
     original_document = relationship('Document', uselist=False)
 
@@ -141,16 +142,22 @@ class Document(Base):
         return f'Document(id={self.id!r}, title={self.title!r}, year={self.year!r}, doi={self.doi!r})'
 
 
-class DocumentSummary(Base):
-    __tablename__ = 'Document_Summary'
+class DocumentMetadata(Base):
+    __tablename__ = 'Document_Metadata'
     id = Column(Integer, primary_key=True)
     content = Column(Text, nullable=False)
     import_date = Column(Date, nullable=False)
     document_id = Column(Integer, ForeignKey('Document.id'), nullable=False, unique=True, index=True)
-    document = relationship('Document', back_populates='summary', foreign_keys=[document_id])
+    document = relationship('Document', back_populates='review_metadata', foreign_keys=[document_id])
+
+    def __init__(self, content, import_date=None):
+        Base.__init__(self)
+        self.content = content
+        if import_date is None:
+            self.import_date = datetime.date.today()
 
     def __repr__(self):
-        return f'DocumentSummary(id={self.id!r}, content={self.content!r})'
+        return f'DocumentMetadata(id={self.id!r}, content={self.content!r})'
 
 
 class Institution(Base):

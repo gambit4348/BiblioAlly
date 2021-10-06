@@ -171,91 +171,91 @@ class TestCatalog(TestCase):
         ally = ba.Catalog(self.catalog_path)
         document_id = 2
         document = ally.document_by(id=document_id)
-        if document.summary is not None:
-            document.summary = None
+        if document.review_metadata is not None:
+            document.review_metadata = None
             ally.commit()
 
         # Act
-        content = '$$$' + document.summary.content if document.summary is not None else ''
-        summary = domain.DocumentSummary(content=content, import_date=datetime.date.today())
-        document.summary = summary
+        content = '$$$' + document.review_metadata.content if document.review_metadata is not None else ''
+        summary = domain.DocumentMetadata(content=content, import_date=datetime.date.today())
+        document.review_metadata = summary
         ally.commit()
 
         # Assert
         ally.close()
         ally = ba.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
-        self.assertIsNotNone(document.summary, 'Document summary not retrieved')
-        self.assertEqual(content, document.summary.content, 'Summary not as expected')
+        self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
+        self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
 
     def test_remove_document_summary(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
         document_id = 4
         document = ally.document_by(id=document_id)
-        if document.summary is None:
-            document.summary = domain.DocumentSummary(content='OLD content', import_date=datetime.date.today())
+        if document.review_metadata is None:
+            document.review_metadata = domain.DocumentMetadata(content='OLD content', import_date=datetime.date.today())
             ally.commit()
             ally.close()
             ally = ba.Catalog(self.catalog_path)
             document = ally.document_by(id=document_id)
 
         # Act
-        document.summary = None
+        document.review_metadata = None
         ally.commit()
 
         # Assert
         ally.close()
         ally = ba.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
-        self.assertIsNone(document.summary, 'Document summary still retrieved')
+        self.assertIsNone(document.review_metadata, 'Document summary still retrieved')
 
     def test_replace_document_summary(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
         document_id = 4
         document = ally.document_by(id=document_id)
-        if document.summary is None:
-            document.summary = domain.DocumentSummary(content='OLD content', import_date=datetime.date.today())
+        if document.review_metadata is None:
+            document.review_metadata = domain.DocumentMetadata(content='OLD content', import_date=datetime.date.today())
             ally.commit()
             ally.close()
             ally = ba.Catalog(self.catalog_path)
             document = ally.document_by(id=document_id)
 
         # Act
-        document.summary = None
+        document.review_metadata = None
         ally.commit()
         content = 'NEW content'
-        document.summary = domain.DocumentSummary(content=content, import_date=datetime.date.today())
+        document.review_metadata = domain.DocumentMetadata(content=content, import_date=datetime.date.today())
         ally.commit()
 
         # Assert
         ally.close()
         ally = ba.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
-        self.assertIsNotNone(document.summary, 'Document summary not retrieved')
-        self.assertEqual(content, document.summary.content, 'Summary not as expected')
+        self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
+        self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
 
     def test_update_document_summary(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
         document_id = 3
         document = ally.document_by(id=document_id)
-        if document.summary is None:
-            document.summary = domain.DocumentSummary(content='Content', import_date=datetime.date.today())
+        if document.review_metadata is None:
+            document.review_metadata = domain.DocumentMetadata(content='Content', import_date=datetime.date.today())
             ally.commit()
 
         # Act
-        content = 'NEW '+document.summary.content
-        document.summary.content = content
+        content = 'NEW '+document.review_metadata.content
+        document.review_metadata.content = content
         ally.commit()
 
         # Assert
         ally.close()
         ally = ba.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
-        self.assertIsNotNone(document.summary, 'Document summary not retrieved')
-        self.assertEqual(content, document.summary.content, 'Summary not as expected')
+        self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
+        self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
 
     def test_create(self):
         # Arrange
