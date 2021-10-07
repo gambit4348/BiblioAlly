@@ -1,11 +1,8 @@
 import datetime
 import unittest
 from unittest import TestCase
-from src import catalog as ba, domain
-from src.bibtex.acmdl import translator as acm
-from src.bibtex.ieee import translator as ieee
-from src.bibtex.scopus import translator as scopus
-from src.bibtex.wos import translator as wos
+from src.BiblioAlly import catalog as ba
+from src.BiblioAlly import domain, acmdl as acm, ieee as ieee, scopus as scopus, wos as wos
 
 bibtex_path = 'refs/'
 
@@ -166,7 +163,7 @@ class TestCatalog(TestCase):
         for doc in documents:
             self.assertTrue(doc.is_tagged(tag), f'Document {doc} not tagged as {tag}')
 
-    def test_add_document_summary(self):
+    def test_add_document_metadata(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
         document_id = 2

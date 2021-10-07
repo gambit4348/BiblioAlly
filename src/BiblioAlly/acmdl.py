@@ -1,5 +1,6 @@
-import src.bibtex.translator as bibtex
-from src import catalog as cat, domain
+from . import translator as bibtex
+from . import catalog as cat
+from . import domain
 
 
 class AcmDLTranslator(bibtex.Translator):

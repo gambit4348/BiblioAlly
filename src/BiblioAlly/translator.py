@@ -1,4 +1,4 @@
-from src import basetranslator as bt, domain
+from . import domain, basetranslator as bt
 import re
 from typing import Dict
 

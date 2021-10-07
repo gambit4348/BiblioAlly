@@ -1,5 +1,5 @@
 import datetime
-import domain
+from . import domain
 from functools import reduce
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, aliased
@@ -312,15 +312,18 @@ class Catalog:
             index += 1
 
 
+all_document_fields = [
+            'id', 'title', 'year', 'journal', 'external_key', 'doi', 'document_type', 'kind',
+            'abstract', 'pages', 'volume', 'number', 'url', 'language', 'generator', 'import_date',
+            'authors', 'keywords', 'tags', 'references', 'reason', 'review_metadata', 'original_document'
+        ]
+
+
 def as_dict(documents, fields=None, **kwargs):
     if type(documents) is not list:
         documents = [documents]
     if fields is None:
-        fields = [
-            'id', 'title', 'year', 'journal', 'external_key', 'doi', 'document_type', 'kind',
-            'abstract', 'pages', 'volume', 'number', 'url', 'language', 'generator', 'import_date',
-            'authors', 'keywords', 'tags', 'references', 'reason', 'summary', 'original_document'
-        ]
+        fields = all_document_fields
     proto_documents = {}
     for field in fields:
         proto_documents[field] = []
@@ -338,11 +341,7 @@ def as_tuple(documents, fields=None, **kwargs):
     if type(documents) is not list:
         documents = [documents]
     if fields is None:
-        fields = [
-            'id', 'title', 'year', 'journal', 'external_key', 'doi', 'document_type', 'kind',
-            'abstract', 'pages', 'volume', 'number', 'url', 'language', 'generator', 'import_date',
-            'authors', 'keywords', 'tags', 'references', 'reason', 'summary', 'original_document'
-        ]
+        fields = all_document_fields
     doc_tuples = []
     for document in documents:
         values = []

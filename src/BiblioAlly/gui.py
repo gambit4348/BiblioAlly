@@ -1,9 +1,8 @@
 import datetime
 
 import PySimpleGUI as sg
-import catalog as cat
-import domain
-
+from . import catalog as cat
+from . import domain
 
 BUTTON_EXIT = '-EXIT-'
 

@@ -1,5 +1,5 @@
-import gui
-from catalog import Catalog
+from BiblioAlly import gui
+from BiblioAlly import catalog as cat
 
 # This is a sample Python script.
 
@@ -10,7 +10,7 @@ from catalog import Catalog
 def main():
     base_path = "..\\"
     base_file = base_path + "DeceptionDetection.db"
-    catalog = Catalog(base_file)
+    catalog = cat.Catalog(base_file)
 
     browser = gui.Browser(catalog)
     browser.show()
