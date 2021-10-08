@@ -8,6 +8,7 @@ BUTTON_EXIT = '-EXIT-'
 
 BUTTON_EDIT_DOC_METADATA = '-BUTTON-EDIT-DOC-METADATA-'
 BUTTON_DOC_PRESELECT = '-DOC-PRESELECT-'
+COL_OPERATIONS = '-COL-OPERATIONS-'
 LABEL_DOC_METADATA = '-LABEL-DOC-METADATA-'
 LABEL_DOC_REJECT = '-LABEL-DOC-REJECT-'
 LIST_DOC_REJECT = '-DOC-REJECT-'
@@ -55,17 +56,38 @@ filter_buttons = [
     BUTTON_TAG_PRE_SELECTED
 ]
 
-metadata_font = ('Courier New', 9, '')
+metadata_font = ('Courier New', 8, '')
+metadata_font_edit = ('Courier New', 9, '')
 label_font = ('Arial', 10, '')
 text_font = ('Arial', 10, 'bold')
 text_color = 'orange'
 button_base_font = 'Arial 10'
-import_color = ('black', 'grey')
-preselect_color = ('black', 'cyan')
-select_color = ('black', 'lime')
+
+duplicate_color = ('#ECFFFF', '#FAB420')
+reject_color = ('#ECFFFF', '#E94763')
+import_color = ('#ECFFFF', '#737A97')
+preselect_color = ('#ECFFFF', '#37A4F6')
+select_color = ('#ECFFFF', '#03A399')
 
 doc_headings = ['Year', 'Title', 'Authors', 'Kind', 'Origin', 'Tags']
 doc_widths = [4, 95, 45, 15, 15, 20]
+
+# Add your new theme colors and settings
+sg.LOOK_AND_FEEL_TABLE['BiblioAllyTheme'] = {
+    'BACKGROUND': '#212735',
+    'TEXT': '#737A97',
+    'INPUT': '#36394C',
+    'TEXT_INPUT': '#737A97',
+    'SCROLL': '#737A97',
+    'BUTTON': ('#F0F0F0', '#626ED4'),
+    'PROGRESS': ('#D1826B', '#CC8019'),
+    'BORDER': 1,
+    'SLIDER_DEPTH': 0,
+    'PROGRESS_DEPTH': 0,
+}
+sg.theme('BiblioAllyTheme')
+table_alternate_color = '#36394C'
+table_background_color = '#333A47'
 
 
 class Browser:
@@ -86,12 +108,18 @@ class Browser:
         self._load_documents()
         self._filter_documents()
 
-        sg.theme('DarkBlue3')
         self._window = self._main_window()
         self._window.read(timeout=1)
         self._update_table()
         self._update_reject_reasons()
         self._select_document_by_index(0)
+        self._window[TABLE_DOCUMENTS].expand(True, True)
+        self._window[COL_OPERATIONS].expand(True, True)
+        self._window[DOC_METADATA].expand(True, True)
+        self._window[DOC_METADATA].update(visible=False)
+        self._window[LIST_DOC_REJECT].expand(True, True)
+        self._window[LIST_DOC_REJECT].update(visible=False)
+
         while True:
             event, values = self._window.read()
             if event == sg.WINDOW_CLOSED or event == BUTTON_EXIT:
@@ -214,7 +242,8 @@ class Browser:
                 sg.Input('', key=METADATA_DOC_EXTERNAL_KEY, size=(25, 1), readonly=True),
             ],
             [
-                sg.Multiline(default_text='', key=METADATA_CONTENT, size=(160, 40), font=metadata_font, autoscroll=True)
+                sg.Multiline(default_text='', key=METADATA_CONTENT, size=(160, 40), font=metadata_font_edit,
+                             autoscroll=True)
             ],
             [
                 sg.Button('Cancel', key=BUTTON_METADATA_CANCEL),
@@ -223,7 +252,7 @@ class Browser:
         ]
 
         doc = self._selected_document
-        window = sg.Window('Edit Metadata', edit_metadata_layout, resizable=True)
+        window = sg.Window('Edit Metadata', edit_metadata_layout, resizable=True, element_padding=1)
         event, values = window.read(timeout=1)
         window[METADATA_DOC_AUTHORS].update(self.author_names(doc.authors))
         window[METADATA_DOC_DOI].update(doc.doi)
@@ -231,6 +260,8 @@ class Browser:
         window[METADATA_DOC_ID].update(doc.id)
         window[METADATA_DOC_TITLE].update(doc.title)
         window[METADATA_DOC_YEAR].update(doc.year)
+        window[METADATA_CONTENT].expand(True, True)
+
         if doc.review_metadata is not None:
             window[METADATA_CONTENT].update(doc.review_metadata.content)
         while True:
@@ -255,8 +286,8 @@ class Browser:
                 sg.Column([
                     [
                         sg.Button('Imported ON', key=BUTTON_TAG_IMPORTED, button_color=import_color),
-                        sg.Button('Duplicate ON', key=BUTTON_TAG_DUPLICATE, button_color=('black', 'yellow')),
-                        sg.Button('Rejected ON', key=BUTTON_TAG_REJECTED, button_color=('black', 'salmon')),
+                        sg.Button('Duplicate ON', key=BUTTON_TAG_DUPLICATE, button_color=duplicate_color),
+                        sg.Button('Rejected ON', key=BUTTON_TAG_REJECTED, button_color=reject_color),
                         sg.Button('Pre-selected ON', key=BUTTON_TAG_PRE_SELECTED, button_color=preselect_color),
                         sg.Button('Selected ON', key=BUTTON_TAG_SELECTED, button_color=select_color),
                     ]
@@ -269,9 +300,8 @@ class Browser:
 
             ],
             [
-                sg.Table(key=TABLE_DOCUMENTS, enable_events=True,
-                         values=[],
-                         headings=doc_headings,
+                sg.Table([], key=TABLE_DOCUMENTS, enable_events=True, headings=doc_headings,
+                         alternating_row_color=table_background_color,
                          auto_size_columns=False, col_widths=doc_widths, justification='left',
                          visible_column_map=[h[0] != '~' for h in doc_headings], num_rows=20)
             ],
@@ -282,14 +312,16 @@ class Browser:
                         sg.Text(text='', key=DOC_YEAR, size=(4, 1), font=text_font, text_color=text_color),
                         sg.Text('Title:', font=label_font),
                         sg.Text(text='', key=DOC_TITLE, size=(70, 1), font=text_font, text_color=text_color),
-                        sg.Text('Kind:', font=label_font),
-                        sg.Text(text='', key=DOC_KIND, size=(20, 1), font=text_font, text_color=text_color),
-                        sg.Text('Origin:', font=label_font),
-                        sg.Text(text='', key=DOC_ORIGIN, size=(20, 1), font=text_font, text_color=text_color),
                     ],
                     [
                         sg.Text('Authors:', font=label_font),
                         sg.Text(text='', key=DOC_AUTHORS, size=(70, 1), font=text_font, text_color=text_color),
+                    ],
+                    [
+                        sg.Text('Kind:', font=label_font),
+                        sg.Text(text='', key=DOC_KIND, size=(20, 1), font=text_font, text_color=text_color),
+                        sg.Text('Origin:', font=label_font),
+                        sg.Text(text='', key=DOC_ORIGIN, size=(20, 1), font=text_font, text_color=text_color),
                         sg.Text('DOI:', font=label_font),
                         sg.Text(text='', key=DOC_DOI, size=(30, 1), font=text_font, text_color=text_color),
                         sg.Text('External key:', font=label_font),
@@ -307,7 +339,7 @@ class Browser:
                         ]),
                         sg.Column([
                             [sg.Text('Keywords', font=label_font)],
-                            [sg.Multiline(key=DOC_KEYWORDS, default_text='', size=(60, 20), disabled=True,
+                            [sg.Multiline(key=DOC_KEYWORDS, default_text='', size=(40, 20), disabled=True,
                                           autoscroll=True)]
                         ]),
                     ]
@@ -324,17 +356,18 @@ class Browser:
                         sg.Text('Metadata', key=LABEL_DOC_METADATA, visible=False)
                     ],
                     [
-                        sg.Listbox([], size=(74, 20), key=LIST_DOC_REJECT, enable_events=True, visible=False),
-                        sg.Multiline(default_text='', key=DOC_METADATA, size=(74, 20), font=metadata_font,
+                        sg.Listbox([], key=LIST_DOC_REJECT, size=(94, 24), enable_events=True, visible=False),
+                        sg.Multiline(default_text='', key=DOC_METADATA, size=(94, 24), font=metadata_font,
                                      disabled=True, visible=False, autoscroll=True)
                     ],
                     [
                         sg.Button('Edit metadata', key=BUTTON_EDIT_DOC_METADATA, visible=False)
                     ]
-                ]),
+                ], key=COL_OPERATIONS),
             ],
         ]
-        return sg.Window('BiblioAlly', main_layout, resizable=True)
+        window = sg.Window('BiblioAlly', main_layout, resizable=True, element_padding=1)
+        return window
 
 
     def _filter_documents(self):
