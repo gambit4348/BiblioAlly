@@ -11,6 +11,20 @@ class TestCatalog(TestCase):
     def setUp(self):
         self.catalog_path = 'BiblioAllyTests.db'
 
+    def test_as_dict(self):
+        # Arrange
+        ally = ba.Catalog(self.catalog_path, echo=True)
+        all_documents = ally.documents_by()
+
+        # Act
+        all_documents_dict = ba.as_dict(all_documents,
+                                        reason=lambda reason: reason.description if reason is not None else None,
+                                        tags=lambda tags: [t.tag.name for t in tags])
+
+        # Assert
+        ally.close()
+        self.assertIsNotNone(all_documents_dict, 'Document dict not retrieved')
+
     def test_import_refs_from_invalid(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
