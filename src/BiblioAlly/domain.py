@@ -99,11 +99,11 @@ class Document(Base):
     tags = relationship('DocumentTag', cascade='all, delete-orphan', back_populates='document')
     references = relationship('Reference', cascade='all, delete', back_populates='document')
     reason_id = Column(Integer, ForeignKey('Reason.id'))
-    reason = relationship('Reason', uselist=False)
+    reason = relationship('Reason')
+    original_document_id = Column(Integer, ForeignKey('Document.id'))
+    original_document = relationship('Document')
     review_metadata = relationship('DocumentMetadata', uselist=False, back_populates='document',
                                    cascade="all, delete-orphan")
-    original_document_id = Column(Integer, ForeignKey('Document.id'))
-    original_document = relationship('Document', uselist=False)
 
     def __init__(self, external_key, kind, title, abstract, keywords, year, affiliations):
         Base.__init__(self)
