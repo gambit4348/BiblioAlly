@@ -4,26 +4,26 @@ from . import domain
 
 
 class ScopusTranslator(bibtex.Translator):
-    def bibtex_from_document(self, ref):
+    def bibtex_from_document(self, document):
         lines = []
-        lines.append("author=" + self._curlied([(author.longName if author.longName is not None
-                                                 else author.shortName) for author in ref.authors], " and "))
-        lines.append("title=" + self._curlied(ref.title))
-        if ref.journal is not None:
-            lines.append("journal=" + self._curlied(ref.journal))
-        lines.append("year=" + self._curlied(str(ref.year)))
-        if ref.pages is not None:
-            lines.append("pages=" + self._curlied(str(ref.pages)))
-        if ref.volume is not None:
-            lines.append("volume=" + self._curlied(str(ref.volume)))
-        if ref.number is not None:
-            lines.append("number=" + self._curlied(str(ref.number)))
-        if ref.doi is not None:
-            lines.append("doi=" + self._curlied(ref.doi))
+        lines.append("author=" + self._curly([(author.longName if author.longName is not None
+                                                 else author.shortName) for author in document.authors], " and "))
+        lines.append("title=" + self._curly(document.title))
+        if document.journal is not None:
+            lines.append("journal=" + self._curly(document.journal))
+        lines.append("year=" + self._curly(str(document.year)))
+        if document.pages is not None:
+            lines.append("pages=" + self._curly(str(document.pages)))
+        if document.volume is not None:
+            lines.append("volume=" + self._curly(str(document.volume)))
+        if document.number is not None:
+            lines.append("number=" + self._curly(str(document.number)))
+        if document.doi is not None:
+            lines.append("doi=" + self._curly(document.doi))
         affiliations = []
-        for author in ref.authors:
-            if author in ref.affiliations:
-                affiliation = ref.affiliations[author]
+        for author in document.authors:
+            if author in document.affiliations:
+                affiliation = document.affiliations[author]
                 affiliations.append(affiliation)
 
         def by_first(item):
@@ -37,18 +37,18 @@ class ScopusTranslator(bibtex.Translator):
             country = affiliation.country if affiliation.country is not None else 'Unknown'
             description = affiliation.description if affiliation.description is not None else 'Unknown'
             bibtex_affiliations.append(', '.join([description, country]))
-        lines.append("affiliation=" + self._curlied(bibtex_affiliations, "; "))
-        lines.append("author_keywords=" + self._curlied(ref.keywords))
-        lines.append("abstract=" + self._curlied(ref.abstract))
-        lines.append("references=" + self._curlied('; '.join(ref.references)))
-        if ref.language is not None:
-            lines.append("language=" + self._curlied(str(ref.language)))
-        if ref.document_type is not None:
-            lines.append("document_type=" + self._curlied(str(ref.document_type)))
-        lines.append("generator=" + self._curlied(ref.generator))
+        lines.append("affiliation=" + self._curly(bibtex_affiliations, "; "))
+        lines.append("author_keywords=" + self._curly(document.keywords))
+        lines.append("abstract=" + self._curly(document.abstract))
+        lines.append("references=" + self._curly('; '.join(document.references)))
+        if document.language is not None:
+            lines.append("language=" + self._curly(str(document.language)))
+        if document.document_type is not None:
+            lines.append("document_type=" + self._curly(str(document.document_type)))
+        lines.append("generator=" + self._curly(document.generator))
 
         bibTex = ",\n".join(lines)
-        bibTex = "@" + ref.kind.upper() + "{" + ref.bibId + ",\n" + bibTex + "\n}"
+        bibTex = "@" + document.kind.upper() + "{" + document.bibId + ",\n" + bibTex + "\n}"
         return bibTex
 
     def _document_from_proto_document(self, proto_document):
@@ -69,13 +69,13 @@ class ScopusTranslator(bibtex.Translator):
             author_field = ''
         authors = self._authors_from_field(author_field)
         if 'affiliation' in fields:
-            affiliations = self._affiliations_from_field(self._all_uncurlied(fields['affiliation']))
+            affiliations = self._affiliations_from_field(self._all_uncurly(fields['affiliation']))
         else:
             affiliations = None
         affiliations = self._expand_affiliations(affiliations, authors)
         keywords = []
         if 'author_keywords' in fields:
-            all_keywords = self._all_uncurlied(fields['author_keywords']).split(';')
+            all_keywords = self._all_uncurly(fields['author_keywords']).split(';')
             keyword_names = set()
             for keyword_name in all_keywords:
                 name = keyword_name.strip().capitalize()

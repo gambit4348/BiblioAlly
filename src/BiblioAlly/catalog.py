@@ -273,6 +273,51 @@ class Catalog:
             total_count = self._session.query(domain.Document).count()
         return added_count, len(loaded_documents), total_count
 
+    def export_to_file(self, target: str, filename: str, should_export=None):
+        """
+        Imports references from a file.
+
+        Parameters:
+            target :
+                the identifier of the BibTex dialect.
+            filename :
+                the file name of the .bib file to be imported.
+            should_export :
+                a function or lambda that receives one Document and should return True if it is to be exported.
+
+        Returns:
+            the amount of documents exported.
+
+        BiblioAlly comes with four BibTeX translators out of the box, with the following constants as their
+        identifiers:
+            1. AcmDL: Translator for CMD Digital library BibTeX files.
+            2. IeeeXplore: Translator for IEEE Xplore BibTeX files.
+            3. Scopus: Translator for Scopus BibTeX files.
+            4. WebOfScience: Translator for Web of Science BibTeX files.
+
+        Example:
+            import BiblioAlly.catalog as ally
+            import BiblioAlly.domain as domain
+            import BiblioAlly.wos as wos
+
+            total = catalog.export_to_file(wos.WebOfScience, '.\\WoS\\refs.bib',
+                    export_if=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
+        """
+        if target not in Catalog.translators:
+            return 0
+        translator_class = Catalog.translators[target]
+        translator = translator_class()
+        loaded_documents = self.documents_by()
+        if should_export is not None:
+            exported_documents = [d for d in loaded_documents if should_export(d)]
+        else:
+            exported_documents = [d for d in loaded_documents]
+        exported_documents.sort(key=lambda d: d.title)
+        bibtex = translator.bibtext_from_documents(exported_documents)
+        with open(filename, "w", encoding="utf-8") as texFile:
+            texFile.write(bibtex)
+        return len(exported_documents)
+
     def close(self):
         """
         Closes the catalog, not allowing any other operations anymore.

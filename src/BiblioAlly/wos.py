@@ -16,19 +16,19 @@ class WoSBibTexTranslator(bibtex.Translator):
 
     def bibtex_from_document(self, document):
         lines = []
-        lines.append("Title = " + self._curlied(document.title))
-        lines.append("Author = " + self._curlied([(author.longName if author.longName is not None else author.shortName)
-                                                  for author in document.authors], " and "))
+        lines.append("Title = " + self._curly(document.title))
+        lines.append("Author = " + self._curly([(author.longName if author.longName is not None else author.shortName)
+                                                for author in document.authors], " and "))
         affiliations = []
         for author in document.authors:
             affiliation = document.affiliations[author]
             affiliations.append(', '.join([affiliation.description, affiliation.country]))
-        lines.append("Affiliations = " + self._curlied(affiliations, "; "))
-        lines.append("Keywords = " + self._curlied(document.keywords))
-        lines.append("Abstract = " + self._curlied(document.abstract))
-        lines.append("DA = " + self._curlied(str(document.year) + "-06-01"))
+        lines.append("Affiliations = " + self._curly(affiliations, "; "))
+        lines.append("Keywords = " + self._curly(document.keywords))
+        lines.append("Abstract = " + self._curly(document.abstract))
+        lines.append("DA = " + self._curly(str(document.year) + "-06-01"))
         if document.doi is not None:
-            lines.append("DOI = " + self._curlied(document.doi))
+            lines.append("DOI = " + self._curly(document.doi))
 
         bibTex = ",\n".join(lines)
         bibTex = "@" + document.kind + "{" + document.bibId + ",\n" + bibTex + "\n}"
@@ -47,20 +47,20 @@ class WoSBibTexTranslator(bibtex.Translator):
         else:
             abstract = ''
         if 'Year' in fields:
-            year = int(self._all_uncurlied(fields['Year']))
+            year = int(self._all_uncurly(fields['Year']))
         else:
             date = self._uncurlied(fields['DA'])
             year = int(self._uncurlied(fields['DA']).split('-')[0])
         author_field = self._unbroken(self._uncurlied(fields['Author']))
         authors = self._authors_from_field(author_field)
         if 'Affiliation' in fields:
-            affiliations = self._affiliations_from_field(self._all_uncurlied(fields['Affiliation']))
+            affiliations = self._affiliations_from_field(self._all_uncurly(fields['Affiliation']))
         else:
             affiliations = None
         affiliations = self._expand_affiliations(affiliations, authors)
         keywords = []
         if 'Keywords' in fields:
-            all_keywords = self._all_uncurlied(fields['Keywords']).split(';')
+            all_keywords = self._all_uncurly(fields['Keywords']).split(';')
             keyword_names = set()
             for keyword_name in all_keywords:
                 name = keyword_name.strip().capitalize()

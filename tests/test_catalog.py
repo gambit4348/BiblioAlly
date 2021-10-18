@@ -25,6 +25,17 @@ class TestCatalog(TestCase):
         ally.close()
         self.assertIsNotNone(all_documents_dict, 'Document dict not retrieved')
 
+    def test_export_to_acm_dl(self):
+        # Arrange
+        ally = ba.Catalog(self.catalog_path)
+
+        # Act
+        export_count = ally.export_to_file(acm.AcmDL, bibtex_path + 'exported_acm_dl.bib',
+                                           should_export=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
+
+        # Assert
+        self.assertEqual(export_count, 72, 'Unexpected export count')
+
     def test_import_refs_from_invalid(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)

@@ -22,7 +22,7 @@ class AcmDLTranslator(bibtex.Translator):
         affiliations = self._expand_affiliations(None, authors)
         keywords = []
         if 'keywords' in fields:
-            all_keywords = self._all_uncurlied(fields['keywords']).split(',')
+            all_keywords = self._all_uncurly(fields['keywords']).split(',')
             keyword_names = set()
             for keyword_name in all_keywords:
                 name = keyword_name.strip().capitalize()
@@ -43,6 +43,48 @@ class AcmDLTranslator(bibtex.Translator):
                 if len(value) > 0:
                     setattr(document, name, value)
         return document
+
+    def _proto_document_from_document(self, document: domain.Document):
+        fields = dict()
+        fields['external_key'] = document.external_key
+        authors = [(doc_author.author.long_name if doc_author.author.long_name is not None
+                    else doc_author.author.short_name) for doc_author in document.authors]
+        fields['author'] = self._curly(authors, separator=' and ')
+        fields['title'] = self._curly(document.title)
+        fields['year'] = self._curly(str(document.year))
+        if document.international_number is not None:
+            if document.kind == 'article':
+                fields['issn'] = self._curly(str(document.international_number))
+            else:
+                fields['isbn'] = self._curly(str(document.international_number))
+        if document.publisher is not None:
+            fields['publisher'] = self._curly(str(document.publisher))
+        if document.address is not None:
+            fields['address'] = self._curly(str(document.address))
+        if document.url is not None:
+            fields['url'] = self._curly(str(document.url))
+        if document.doi is not None:
+            fields['doi'] = self._curly(str(document.doi))
+        fields['abstract'] = self._curly(document.abstract)
+        if document.journal is not None:
+            if document.kind == 'article':
+                fields['journal'] = self._curly(str(document.journal))
+            else:
+                fields['booktitle'] = self._curly(str(document.journal))
+        if document.pages is not None:
+            fields['pages'] = self._curly(str(document.pages))
+        if document.volume is not None:
+            fields['volume'] = self._curly(str(document.volume))
+        if document.number is not None:
+            fields['number'] = self._curly(str(document.number))
+        keywords = [keyword.name for keyword in document.keywords]
+        fields['keywords'] = self._curly(keywords, ', ')
+
+        proto_document = {
+            'type': document.kind,
+            'fields': fields
+        }
+        return proto_document
 
 
 AcmDL = "AcmDL"

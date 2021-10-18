@@ -346,12 +346,36 @@ class Translator(bt.BaseTranslator):
         documents = self._documents_from_proto_documents(proto_documents)
         return documents
 
+    def bibtext_from_documents(self, documents):
+        proto_documents = self._proto_documents_from_documents(documents)
+        bibtexts = [Translator._as_bibtex(pd) for pd in proto_documents]
+        return '\n'.join(bibtexts)
+
     def _documents_from_proto_documents(self, proto_documents):
         documents = []
         for proto_document in proto_documents:
             document = self._document_from_proto_document(proto_document)
             documents.append(document)
         return documents
+
+    def _proto_documents_from_documents(self, documents):
+        proto_documents = []
+        for document in documents:
+            proto_document = self._proto_document_from_document(document)
+            proto_documents.append(proto_document)
+        return proto_documents
+
+    @staticmethod
+    def _as_bibtex(proto_document):
+        kind = proto_document['type']
+        fields = proto_document['fields']
+        external_key = fields['external_key']
+        del fields['external_key']
+        key_value = []
+        for key, value in fields.items():
+            key_value.append(f'{key} = {value}')
+        bibtex = f'@{kind}' + '{' + f'{external_key}\n' + ',\n'.join(key_value) + '\n}\n'
+        return bibtex
 
     @staticmethod
     def _expand_affiliations(affiliations, authors):
@@ -414,14 +438,14 @@ class Translator(bt.BaseTranslator):
                         entry_pieces.append(line.strip())
                     else:
                         index = line.find('=')
-                        fields[line[0:index].strip()] = Translator._all_uncurlied(line[index + 1:-2].strip())
+                        fields[line[0:index].strip()] = Translator._all_uncurly(line[index + 1:-2].strip())
                 else:
                     entry_pieces.append(line.strip())
                     complete_entry = (line[-2:] == '},' or line[-1] == '}')
                     if complete_entry:
                         entry = ' '.join(entry_pieces)
                         index = entry.find('=')
-                        fields[entry[0:index].strip()] = Translator._all_uncurlied(entry[index + 1:-2].strip())
+                        fields[entry[0:index].strip()] = Translator._all_uncurly(entry[index + 1:-2].strip())
                         entry_pieces = []
 
         return proto_documents
@@ -429,11 +453,14 @@ class Translator(bt.BaseTranslator):
     def bibtex_from_document(self, ref):
         return ''
 
-    def _document_from_proto_document(self, proto_ref):
+    def _document_from_proto_document(self, proto_document):
         return None
 
+    def _proto_document_from_document(self, document):
+        return dict()
+
     @staticmethod
-    def _all_uncurlied(value):
+    def _all_uncurly(value):
         return re.sub('[{}]', '', value)
 
     def _affiliations_from_field(self, affiliations_field, separator='; '):
@@ -514,10 +541,12 @@ class Translator(bt.BaseTranslator):
         return authors
 
     @staticmethod
-    def _curlied(value, separator=",") -> str:
+    def _curly(value: str, separator: str = ",") -> str:
         if type(value) is list:
-            return "{" + separator.join(value) + "}"
-        return "{" + value + "}"
+            curly_value = "{" + separator.join(value) + "}"
+        else:
+            curly_value = "{" + value + "}"
+        return curly_value
 
     @staticmethod
     def _is_name(value):
@@ -533,7 +562,7 @@ class Translator(bt.BaseTranslator):
     @staticmethod
     def _reversed_name(name):
         pieces = name.split()
-        if len(pieces) >  1:
+        if len(pieces) > 1:
             return pieces[-1] + ', ' + ' '.join(pieces[0:len(pieces)-1])
         else:
             return name

@@ -19,14 +19,14 @@ class IeeeXTranslator(bibtex.Translator):
         year = int(fields['year'])
         author_field = ''
         if 'author' in fields:
-            author_field = self._unbroken(self._all_uncurlied(fields['author'].replace('}and', ' and')))
+            author_field = self._unbroken(self._all_uncurly(fields['author'].replace('}and', ' and')))
         if author_field == '':
             author_field = 'Author, Unamed'
         authors = self._authors_from_field(author_field)
         affiliations = self._expand_affiliations(None, authors)
         keywords = []
         if 'keywords' in fields:
-            all_keywords = self._all_uncurlied(fields['keywords']).split(';')
+            all_keywords = self._all_uncurly(fields['keywords']).split(';')
             keyword_names = set()
             for keyword_name in all_keywords:
                 sub_keyword_names = keyword_name.split(',')
