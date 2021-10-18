@@ -475,6 +475,28 @@ all_document_fields = [
 
 
 def as_dict(documents, fields=None, **kwargs):
+    """
+    Translates a list of documents as a dictionary.
+
+    Parameters:
+        documents :
+            the of documents to be operated;
+        fields :
+            the list of fields that will be translated; if None is passed, all fields will be translated;
+        **kwargs :
+            fields that will be pre-processed before being translated; pre-processors are functions or lambdas
+            that will receive the field value and return some operated version of it.
+
+    Returns:
+        A dictionary translated from the document list.
+
+    The format returned makes it ideal to be used to initialize a Pandas DataFrame.
+
+    Example:
+        all_documents_dict = ally.as_dict(all_documents,
+                                          reason=lambda reason: reason.description if reason is not None else None,
+                                          tags=lambda tags: [t.tag.name for t in tags])
+    """
     if type(documents) is not list:
         documents = [documents]
     if fields is None:
@@ -493,6 +515,26 @@ def as_dict(documents, fields=None, **kwargs):
 
 
 def as_tuple(documents, fields=None, **kwargs):
+    """
+    Translates a list of documents as list of tuples.
+
+    Parameters:
+        documents :
+            the of documents to be operated;
+        fields :
+            the list of fields that will be translated; if None is passed, all fields will be translated;
+        **kwargs :
+            fields that will be pre-processed before being translated; pre-processors are functions or lambdas
+            that will receive the field value and return some operated version of it.
+
+    Returns:
+        A list of tuples from the document list.
+
+    Example:
+        all_documents_dict = ally.as_tuple(all_documents,
+                                           reason=lambda reason: reason.description if reason is not None else None,
+                                           tags=lambda tags: [t.tag.name for t in tags])
+    """
     if type(documents) is not list:
         documents = [documents]
     if fields is None:
