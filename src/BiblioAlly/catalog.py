@@ -207,7 +207,32 @@ class Catalog:
         """
         return self._session.execute(select(domain.Reason).filter_by(**kwargs)).scalars().all()
 
-    def import_from_file(self, source, filename):
+    def import_from_file(self, source: str, filename: str):
+        """
+        Imports references from a file.
+
+        Parameters:
+            source :
+                the identifier of the BibTex dialect.
+            filename :
+                the file name of the .bib file to be imported.
+
+        Returns:
+            the amount of documents added;
+            the amount of documents present in the .bib file;
+            the amount of documents in the BiblioAlly base after the import.
+
+        BiblioAlly comes with four BibTeX translators out of the box, with the following constants as their
+        identifiers:
+            1. AcmDL: Translator for CMD Digital library BibTeX files.
+            2. IeeeXplore: Translator for IEEE Xplore BibTeX files.
+            3. Scopus: Translator for Scopus BibTeX files.
+            4. WebOfScience: Translator for Web of Science BibTeX files.
+
+        Example:
+            import BiblioAlly.wos as wos
+            added, loaded, total = catalog.import_from_file(wos.WebOfScience, '.\\WoS\\refs.bib')
+        """
         if source not in Catalog.translators:
             return 0, 0, 0
         translator_class = Catalog.translators[source]
@@ -224,7 +249,7 @@ class Catalog:
         for institution in institutions:
             if institution.name not in institution_names:
                 institution_names[institution.name] = institution
-        load_count = 0
+        added_count = 0
         try:
             session = self._session
             for loaded_document in loaded_documents:
@@ -238,25 +263,40 @@ class Catalog:
                 self._update_institutions(loaded_document, institution_names)
                 self._update_keywords(loaded_document)
                 self._tag(loaded_document, domain.TAG_IMPORTED)
-                load_count += 1
+                added_count += 1
                 if original_document is not None:
                     self._tag(loaded_document, domain.TAG_DUPLICATE)
                     loaded_document.original_document = original_document
                 session.add(loaded_document)
         finally:
             self._session.commit()
-            base_count = self._session.query(domain.Document).count()
-        return load_count, len(loaded_documents), base_count
+            total_count = self._session.query(domain.Document).count()
+        return added_count, len(loaded_documents), total_count
 
     def close(self):
+        """
+        Closes the catalog, not allowing any other operations anymore.
+
+        The catalog will report False in is_open property.
+        """
         self._session = None
         self._engine = None
 
     def commit(self):
+        """
+        Commits any pending operations.
+
+        Ignored if the catalog is not open.
+        """
         if self.is_open:
             self._session.commit()
 
-    def open(self, catalog_path, echo=True, future=True):
+    def open(self, catalog_path: str, echo=True, future=True):
+        """
+        Opens the catalog and gets ready for operations.
+
+        The catalog will report True in is_open property.
+        """
         self._engine = create_engine('sqlite+pysqlite:///' + catalog_path, echo=echo, future=future)
         self._update_database(self._engine, domain.biblioally_mapper)
         self._session = Session(self._engine)
@@ -267,16 +307,51 @@ class Catalog:
         self._tag_by_name(domain.TAG_ACCEPTED)
         self._session.commit()
 
-    def tag(self, document, tag_name):
+    def tag(self, document: domain.Document, tag_name: str):
+        """
+        Tags a document.
+
+        Parameters:
+            document :
+                the document to be tagged.
+            tag_name :
+                the name of the tag.
+
+        Returns:
+            the document after being tagged.
+
+        If the document is already that tagged, nothing happens. If a Tag instance does not exist for the tag name
+        passed, it will be created, otherwise the existing Tag will be used.
+        """
         return self._tag(document, tag_name)
 
     @staticmethod
     def untag(document, tag_name):
+        """
+        Untags a document.
+
+        Parameters:
+            document :
+                the document to be untagged.
+            tag_name :
+                the name of the tag.
+
+        Returns:
+            the document after being untagged.
+
+        If the document is already that untagged, nothing happens.
+        """
         document.untag(tag_name)
         return document
 
     @property
     def is_open(self):
+        """
+        Indicates if the catalog is open or not.
+
+        Returns:
+            True if the catalog is open, False otherwise.
+        """
         return self._session is not None
 
     def _add_keyword(self, document, keyword_name):
