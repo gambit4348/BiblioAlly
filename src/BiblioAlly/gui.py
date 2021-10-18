@@ -68,6 +68,7 @@ reject_color = ('#ECFFFF', '#E94763')
 import_color = ('#ECFFFF', '#737A97')
 preselect_color = ('#ECFFFF', '#37A4F6')
 select_color = ('#ECFFFF', '#03A399')
+input_color = '#36394C'
 
 doc_headings = ['Year', 'Title', 'Authors', 'Kind', 'Origin', 'Tags']
 doc_widths = [4, 95, 45, 15, 15, 20]
@@ -76,7 +77,7 @@ doc_widths = [4, 95, 45, 15, 15, 20]
 sg.LOOK_AND_FEEL_TABLE['BiblioAllyTheme'] = {
     'BACKGROUND': '#212735',
     'TEXT': '#737A97',
-    'INPUT': '#36394C',
+    'INPUT': input_color,
     'TEXT_INPUT': '#737A97',
     'SCROLL': '#737A97',
     'BUTTON': ('#F0F0F0', '#626ED4'),
@@ -108,8 +109,8 @@ class Browser:
         self._load_documents()
         self._filter_documents()
 
-        self._window = self._main_window()
-        self._window.read(timeout=1)
+        self._window = self._main_window().Finalize()
+        self._window.maximize()
         self._update_table()
         self._update_reject_reasons()
         self._select_document_by_index(0)
@@ -309,41 +310,49 @@ class Browser:
                 sg.Column([
                     [
                         sg.Text('Year:', font=label_font),
-                        sg.Text(text='', key=DOC_YEAR, size=(4, 1), font=text_font, text_color=text_color),
+                        sg.Text(text='', key=DOC_YEAR, size=(4, 1), font=text_font, text_color=text_color,
+                                background_color=input_color),
                         sg.Text('Title:', font=label_font),
-                        sg.Text(text='', key=DOC_TITLE, size=(70, 1), font=text_font, text_color=text_color),
+                        sg.Text(text='', key=DOC_TITLE, size=(114, 1), font=text_font, text_color=text_color,
+                                background_color=input_color, expand_x=True),
                     ],
                     [
                         sg.Text('Authors:', font=label_font),
-                        sg.Text(text='', key=DOC_AUTHORS, size=(70, 1), font=text_font, text_color=text_color),
+                        sg.Text(text='', key=DOC_AUTHORS, size=(121, 1), font=text_font, text_color=text_color,
+                                background_color=input_color, expand_x=True),
                     ],
                     [
                         sg.Text('Kind:', font=label_font),
-                        sg.Text(text='', key=DOC_KIND, size=(20, 1), font=text_font, text_color=text_color),
+                        sg.Text(text='', key=DOC_KIND, size=(20, 1), font=text_font, text_color=text_color,
+                                background_color=input_color),
                         sg.Text('Origin:', font=label_font),
-                        sg.Text(text='', key=DOC_ORIGIN, size=(20, 1), font=text_font, text_color=text_color),
+                        sg.Text(text='', key=DOC_ORIGIN, size=(20, 1), font=text_font, text_color=text_color,
+                                background_color=input_color),
                         sg.Text('DOI:', font=label_font),
-                        sg.Text(text='', key=DOC_DOI, size=(30, 1), font=text_font, text_color=text_color),
+                        sg.Text(text='', key=DOC_DOI, size=(30, 1), font=text_font, text_color=text_color,
+                                background_color=input_color),
                         sg.Text('External key:', font=label_font),
-                        sg.Text(text='', key=DOC_EXTERNAL_KEY, size=(20, 1), font=text_font, text_color=text_color),
+                        sg.Text(text='', key=DOC_EXTERNAL_KEY, size=(20, 1), font=text_font, text_color=text_color,
+                                background_color=input_color),
                     ],
                     [
                         sg.Text('Rejection reason:', font=label_font),
-                        sg.Text(text='', key=DOC_REASON, size=(70, 1), font=text_font, text_color=text_color),
+                        sg.Text(text='', key=DOC_REASON, size=(114, 1), font=text_font, text_color=text_color,
+                                background_color=input_color, expand_x=True),
                     ],
                     [
                         sg.Column([
                             [sg.Text('Abstract', font=label_font)],
                             [sg.Multiline(key=DOC_ABSTRACT, default_text='', size=(100, 20), disabled=True,
-                                          autoscroll=True)]
-                        ]),
+                                          autoscroll=True, expand_x=True, expand_y=True)]
+                        ], expand_x=True, expand_y=True),
                         sg.Column([
                             [sg.Text('Keywords', font=label_font)],
                             [sg.Multiline(key=DOC_KEYWORDS, default_text='', size=(40, 20), disabled=True,
-                                          autoscroll=True)]
-                        ]),
+                                          autoscroll=True, expand_y=True)]
+                        ], expand_y=True),
                     ]
-                ]),
+                ], expand_x=True, expand_y=True),
                 sg.VSeparator(),
                 sg.Column([
                     [
@@ -356,14 +365,15 @@ class Browser:
                         sg.Text('Metadata', key=LABEL_DOC_METADATA, visible=False)
                     ],
                     [
-                        sg.Listbox([], key=LIST_DOC_REJECT, size=(94, 24), enable_events=True, visible=False),
+                        sg.Listbox([], key=LIST_DOC_REJECT, size=(94, 24), enable_events=True, visible=False,
+                                   expand_x=True, expand_y=True),
                         sg.Multiline(default_text='', key=DOC_METADATA, size=(94, 24), font=metadata_font,
-                                     disabled=True, visible=False, autoscroll=True)
+                                     disabled=True, visible=False, autoscroll=True, expand_x=True, expand_y=True)
                     ],
                     [
                         sg.Button('Edit metadata', key=BUTTON_EDIT_DOC_METADATA, visible=False)
                     ]
-                ], key=COL_OPERATIONS),
+                ], key=COL_OPERATIONS, expand_x=True, expand_y=True),
             ],
         ]
         window = sg.Window('BiblioAlly', main_layout, resizable=True, element_padding=1)
