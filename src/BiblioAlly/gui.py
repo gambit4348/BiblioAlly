@@ -451,7 +451,7 @@ class Browser:
         self._window[BUTTON_EDIT_DOC_METADATA].update(visible=element_visible)
 
     def _update_reject_reasons(self):
-        self._reject_reasons = self._catalog.reasons()
+        self._reject_reasons = self._catalog.reasons_by()
         self._reject_reasons.sort(key=lambda item: item.description)
         self._window[LIST_DOC_REJECT].update(values=['Click me to add NEW reason...'] + self._reject_reasons)
 

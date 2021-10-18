@@ -7,6 +7,9 @@ from sqlalchemy.sql.expression import select
 
 
 class Catalog:
+    """
+    Handles the BiblioAlly database.
+    """
     translators = dict()
 
     def __init__(self, catalog_path=None, echo=False, future=True):
@@ -14,6 +17,27 @@ class Catalog:
         self._session = None
         if catalog_path is not None:
             self.open(catalog_path, echo, future)
+
+    def add_reason(self, reason: domain.Reason = None, description: str = None) -> domain.Reason:
+        """
+        Add a Reason to the catalog, that will later be persisted by calling the Catalog.commit() method.
+
+        Parameters:
+            reason (domain.Reason): the instance to be added.
+            description (str): the description of the Reason to be added.
+
+        Returns:
+            domain.Reason: The same instance passed, if any,  the newly created instance if only the description was
+            passed, if any, else, None.
+
+        if both parameters are passed, description will be ignored.
+        """
+        if reason is None:
+            if description is None:
+                return None
+            reason = domain.Reason(description=description)
+        self._session.add(reason)
+        return reason
 
     def add_summary(self, summary: domain.DocumentMetadata) -> domain.DocumentMetadata:
         """
@@ -25,6 +49,9 @@ class Catalog:
 
         Returns:
             domain.DocumentMetadata: The same instance passed.
+
+        Example:
+            the_reasons = catalog.reasons_by(description='No access')
         """
         self._session.add(summary)
         return summary
@@ -40,7 +67,7 @@ class Catalog:
         Returns:
             one instance, if any, of Author that corresponds to the criteria passed.
 
-        If no instance can be found with the criteria specified, the return value is None. On the other hand, if
+        If no instance can be found, the return is None. On the other hand, if
         more than one instance corresponds to the criteria specified, one single instance is returned but there is
         no way to predict which one.
 
@@ -58,9 +85,11 @@ class Catalog:
                 a list of attribute names and values that will work as an example of the desired instances.
 
         Returns:
-            a list containing all the Authors, if any. that correspond to the criteria passed.
+            a list containing all the Authors, if any, that correspond to the criteria passed.
 
-        If no instance can be found with the criteria specified, an empty list si returned.
+        If no parameters are passed, all instances will be returned.
+
+        If no instance can be found, an empty list is returned.
 
         Example:
             catalog.authors_by(short_name='Einstein, A.')
@@ -75,19 +104,19 @@ class Catalog:
             tagged_as : (optional)
                 a name or a list of names of tags that are required to be assigned to the document.
             untagged_as : (optional)
-                a name or a list of names of tags that are required to not be assigned to the document.
+                a name or a list of names of tags that are required to NOT be assigned to the document.
             **kwargs :
                 a list of attribute names and values that will work as an example of the desired instance.
 
         Returns:
             one instance, if any, of Document that corresponds to the criteria passed.
 
-        If no instance can be found with the criteria specified, the return value is None. On the other hand, if
+        If no instance can be found, the return is None. On the other hand, if
         more than one instance corresponds to the criteria specified, one single instance is returned but there is
         no way to predict which one.
 
         Example:
-            catalog.documents_by(tagged_as=catalog.domain.INCLUDED,untagged_as=[catalog.domain.DUPLICATE])
+            catalog.document_by(tagged_as=catalog.domain.INCLUDED, untagged_as=[catalog.domain.DUPLICATE])
             catalog.document_by(doi='biblio-ally/10000.0000')
         """
         stm = self._document_by(tagged_as=tagged_as, untagged_as=untagged_as, **kwargs)
@@ -106,46 +135,77 @@ class Catalog:
                 a list of attribute names and values that will work as an example of the desired instances.
 
         Returns:
-            a list containing all the Documents, if any. that meet the criteria passed.
+            a list containing all the Documents, if any, that meet the criteria passed.
+
+        If no parameters are passed, all instances will be returned.
 
         If no instance can be found with the criteria specified, an empty list is returned.
 
         Example:
-            catalog.documents_by(tagged_as=catalog.domain.INCLUDED,untagged_as=[catalog.domain.DUPLICATE])
+            catalog.documents_by(tagged_as=catalog.domain.INCLUDED, untagged_as=[catalog.domain.DUPLICATE])
         """
         stm = self._document_by(tagged_as=tagged_as, untagged_as=untagged_as, **kwargs)
         return self._session.execute(stm).scalars().all()
 
-    def _document_by(self, tagged_as=None, untagged_as=None, alias=None, **kwargs):
-        if alias is None:
-            stm = select(domain.Document)
-        else:
-            stm = select(alias)
-        if len(kwargs) > 0:
-            stm = stm.filter_by(**kwargs)
-        if tagged_as is not None or untagged_as is not None:
-            stm = stm.join(domain.DocumentTag).join(domain.Tag)
-        if tagged_as is not None:
-            if type(tagged_as) == str:
-                tagged_as = [tagged_as]
-            stm = stm.where(domain.Tag.name.in_(tagged_as))
-        if untagged_as is not None:
-            if type(untagged_as) == str:
-                untagged_as = [untagged_as]
-            doc_alias = aliased(domain.Document, name=alias)
-            stm = stm.where(~self._document_by(tagged_as=untagged_as, alias=doc_alias, id=domain.Document.id).exists())
-        return stm
-
     def keyword_by(self, **kwargs):
+        """
+        Query-by-example for one single keyword.
+
+        Parameters:
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instance.
+
+        Returns:
+            one instance, if any, of Keyword that corresponds to the criteria passed.
+
+        If no instance can be found, the return is None. On the other hand, if
+        more than one instance corresponds to the criteria specified, one single instance is returned but there is
+        no way to predict which one.
+
+        Example:
+            catalog.keyword_by(name='Machine Learning')
+        """
         return self._session.execute(select(domain.Keyword).filter_by(**kwargs)).scalars().first()
 
     def keywords_by(self, **kwargs):
+        """
+        Query-by-example for keywords.
+
+        Parameters:
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instances.
+
+        Returns:
+            a list containing all the Keywords, if any, that meet the criteria passed.
+
+        If no parameters are passed, all instances will be returned.
+
+        If no instance can be found with the criteria specified, an empty list is returned.
+
+        Example:
+            catalog.keywords_by(name='Machine Learning')
+        """
         return self._session.execute(select(domain.Keyword).filter_by(**kwargs)).scalars().all()
 
-    def reasons(self):
-        all_reasons = self._session.execute(select(domain.Reason)).scalars().all()
-        all_reasons.sort(key=lambda item: item.description)
-        return all_reasons
+    def reasons_by(self, **kwargs):
+        """
+        Query-by-example for reasons.
+
+        Parameters:
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instances.
+
+        Returns:
+            a list containing all the Reasons, if any, that meet the criteria passed.
+
+        If no parameters are passed, all instances will be returned.
+
+        If no instance can be found with the criteria specified, an empty list is returned.
+
+        Example:
+            catalog.reasons_by(description='No access')
+        """
+        return self._session.execute(select(domain.Reason).filter_by(**kwargs)).scalars().all()
 
     def import_from_file(self, source, filename):
         if source not in Catalog.translators:
@@ -234,6 +294,26 @@ class Catalog:
                 existing_author = domain.Author(name=author_name, import_date=datetime.datetime.today())
                 self._session.add(existing_author)
         return existing_author
+
+    def _document_by(self, tagged_as=None, untagged_as=None, alias=None, **kwargs):
+        if alias is None:
+            stm = select(domain.Document)
+        else:
+            stm = select(alias)
+        if len(kwargs) > 0:
+            stm = stm.filter_by(**kwargs)
+        if tagged_as is not None or untagged_as is not None:
+            stm = stm.join(domain.DocumentTag).join(domain.Tag)
+        if tagged_as is not None:
+            if type(tagged_as) == str:
+                tagged_as = [tagged_as]
+            stm = stm.where(domain.Tag.name.in_(tagged_as))
+        if untagged_as is not None:
+            if type(untagged_as) == str:
+                untagged_as = [untagged_as]
+            doc_alias = aliased(domain.Document, name=alias)
+            stm = stm.where(~self._document_by(tagged_as=untagged_as, alias=doc_alias, id=domain.Document.id).exists())
+        return stm
 
     def _institution_by_name(self, institution_name, auto_create=True):
         existing_institution = self._session.execute(select(domain.Institution).filter_by(name=institution_name))\

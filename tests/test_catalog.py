@@ -13,7 +13,7 @@ class TestCatalog(TestCase):
 
     def test_as_dict(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path, echo=True)
+        ally = ba.Catalog(self.catalog_path)
         all_documents = ally.documents_by()
 
         # Act
@@ -177,6 +177,52 @@ class TestCatalog(TestCase):
         for doc in documents:
             self.assertTrue(doc.is_tagged(tag), f'Document {doc} not tagged as {tag}')
 
+    def test_retrieve_all_reasons(self):
+        # Arrange
+        ally = ba.Catalog(self.catalog_path)
+        all_reasons = ally.reasons_by()
+        updated = False
+        if len(all_reasons) == 0:
+            ally.add_reason(description='No access')
+            ally.add_reason(description='Off topic')
+            ally.add_reason(description='Off topic the cites the topic')
+            updated = True
+        if updated:
+            ally.commit()
+            ally.close()
+            ally = ba.Catalog(self.catalog_path)
+
+        # Act
+        all_reasons = ally.reasons_by()
+
+        # Assert
+        self.assertGreater(len(all_reasons), 0, f'No Reasons were retrieved')
+
+    def test_retrieve_one_reason(self):
+        # Arrange
+        ally = ba.Catalog(self.catalog_path)
+        all_reasons = ally.reasons_by()
+        updated = False
+        if len(all_reasons) == 0:
+            ally.add_reason('No access')
+            ally.add_reason('Off topic')
+            ally.add_reason('Off topic the cites the topic')
+            updated = True
+        if updated:
+            ally.commit()
+            ally.close()
+            ally = ba.Catalog(self.catalog_path)
+
+        # Act
+        description = 'No access'
+        all_reasons = ally.reasons_by(description=description)
+
+        # Assert
+        self.assertGreater(len(all_reasons), 0, f'No Reasons were retrieved')
+        self.assertEqual(len(all_reasons), 1, f'More than one Reasons were retrieved')
+        the_reason = all_reasons[0]
+        self.assertEqual(the_reason.description, description, f'Unexpected Reason was retrieved: {the_reason}')
+
     def test_add_document_metadata(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
@@ -188,7 +234,7 @@ class TestCatalog(TestCase):
 
         # Act
         content = '$$$' + document.review_metadata.content if document.review_metadata is not None else ''
-        summary = domain.DocumentMetadata(content=content, import_date=datetime.date.today())
+        summary = domain.DocumentMetadata(content=content)
         document.review_metadata = summary
         ally.commit()
 
@@ -205,7 +251,7 @@ class TestCatalog(TestCase):
         document_id = 4
         document = ally.document_by(id=document_id)
         if document.review_metadata is None:
-            document.review_metadata = domain.DocumentMetadata(content='OLD content', import_date=datetime.date.today())
+            document.review_metadata = domain.DocumentMetadata(content='OLD content')
             ally.commit()
             ally.close()
             ally = ba.Catalog(self.catalog_path)
@@ -227,7 +273,7 @@ class TestCatalog(TestCase):
         document_id = 4
         document = ally.document_by(id=document_id)
         if document.review_metadata is None:
-            document.review_metadata = domain.DocumentMetadata(content='OLD content', import_date=datetime.date.today())
+            document.review_metadata = domain.DocumentMetadata(content='OLD content')
             ally.commit()
             ally.close()
             ally = ba.Catalog(self.catalog_path)
@@ -237,7 +283,7 @@ class TestCatalog(TestCase):
         document.review_metadata = None
         ally.commit()
         content = 'NEW content'
-        document.review_metadata = domain.DocumentMetadata(content=content, import_date=datetime.date.today())
+        document.review_metadata = domain.DocumentMetadata(content=content)
         ally.commit()
 
         # Assert
@@ -249,11 +295,11 @@ class TestCatalog(TestCase):
 
     def test_update_document_summary(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = ba.Catalog(self.catalog_path, echo=True)
         document_id = 3
         document = ally.document_by(id=document_id)
         if document.review_metadata is None:
-            document.review_metadata = domain.DocumentMetadata(content='Content', import_date=datetime.date.today())
+            document.review_metadata = domain.DocumentMetadata(content='Content')
             ally.commit()
 
         # Act
