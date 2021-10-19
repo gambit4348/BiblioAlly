@@ -22,17 +22,18 @@ BUTTON_TAG_REJECTED = '-TAG-REJECTED-'
 BUTTON_TAG_SELECTED = '-TAG-SELECTED-'
 
 TABLE_DOCUMENTS = '-DOCUMENTS-'
-DOC_ABSTRACT = '-DOC-ABSTRACT-'
-DOC_AUTHORS = '-DOC-AUTHORS-'
-DOC_DOI = '-DOC-DOI-'
-DOC_EXTERNAL_KEY = '-DOC-EXTERNAL-KEY-'
-DOC_KEYWORDS = '-DOC-KEYWORDS-'
-DOC_KIND = '-DOC-KIND-'
-DOC_METADATA = '-DOC-METADATA-'
-DOC_ORIGIN = '-DOC-ORIGIN-'
-DOC_REASON = '-DOC-REASON-'
-DOC_TITLE = '-DOC-TITLE-'
-DOC_YEAR = '-DOC-YEAR-'
+FIELD_ABSTRACT = '-DOC-ABSTRACT-'
+FIELD_AUTHORS = '-DOC-AUTHORS-'
+FIELD_DOCUMENT_TYPE = '-DOC-DOCUMENT-TYPE-'
+FIELD_DOI = '-DOC-DOI-'
+FIELD_EXTERNAL_KEY = '-DOC-EXTERNAL-KEY-'
+FIELD_KEYWORDS = '-DOC-KEYWORDS-'
+FIELD_KIND = '-DOC-KIND-'
+FIELD_METADATA = '-DOC-METADATA-'
+FIELD_ORIGIN = '-DOC-ORIGIN-'
+FIELD_REASON = '-DOC-REASON-'
+FIELD_TITLE = '-DOC-TITLE-'
+FIELD_YEAR = '-DOC-YEAR-'
 
 tag_for_button = {
     BUTTON_TAG_SELECTED: domain.TAG_ACCEPTED,
@@ -104,7 +105,6 @@ class Browser:
         self._selected_document = None
         self._window = None
 
-
     def show(self):
         self._load_documents()
         self._filter_documents()
@@ -116,11 +116,12 @@ class Browser:
         self._select_document_by_index(0)
         self._window[TABLE_DOCUMENTS].expand(True, True)
         self._window[COL_OPERATIONS].expand(True, True)
-        self._window[DOC_METADATA].expand(True, True)
-        self._window[DOC_METADATA].update(visible=False)
+        self._window[FIELD_METADATA].expand(True, True)
+        self._window[FIELD_METADATA].update(visible=False)
         self._window[LIST_DOC_REJECT].expand(True, True)
         self._window[LIST_DOC_REJECT].update(visible=False)
 
+        row_index = -1
         while True:
             event, values = self._window.read()
             if event == sg.WINDOW_CLOSED or event == BUTTON_EXIT:
@@ -134,17 +135,7 @@ class Browser:
                 self._update_table()
                 self._select_document_by_index(0)
             elif event == LIST_DOC_REJECT:
-                reject_reason = values[LIST_DOC_REJECT][0]
-                if type(reject_reason) is str:
-                    new_reason_text = sg.popup_get_text('Enter your new rejection reason:')
-                    if new_reason_text is not None:
-                        self.reject_document(self._selected_document, new_reason_text)
-                        self._update_reject_reasons()
-                elif type(reject_reason) is domain.Reason:
-                    self.reject_document(self._selected_document, reject_reason)
-                self._filter_documents()
-                self._update_table(row_index)
-                self._select_document_by_index(row_index)
+                self._handle_reject(values, row_index)
             elif event == BUTTON_EDIT_DOC_METADATA:
                 self._edit_metadata()
             elif self._selected_document is not None:
@@ -277,9 +268,24 @@ class Browser:
                 else:
                     doc.review_metadata = domain.DocumentMetadata(content)
                 self._catalog.commit()
-                self._window[DOC_METADATA].update(content)
+                self._window[FIELD_METADATA].update(content)
                 break
         window.close()
+
+    def _handle_reject(self, values, row_index):
+        if row_index < 0:
+            return
+        reject_reason = values[LIST_DOC_REJECT][0]
+        if type(reject_reason) is str:
+            new_reason_text = sg.popup_get_text('Enter your new rejection reason:')
+            if new_reason_text is not None:
+                self.reject_document(self._selected_document, new_reason_text)
+                self._update_reject_reasons()
+        elif type(reject_reason) is domain.Reason:
+            self.reject_document(self._selected_document, reject_reason)
+        self._filter_documents()
+        self._update_table(row_index)
+        self._select_document_by_index(row_index)
 
     def _main_window(self):
         main_layout = [
@@ -310,45 +316,50 @@ class Browser:
                 sg.Column([
                     [
                         sg.Text('Year:', font=label_font),
-                        sg.Text(text='', key=DOC_YEAR, size=(4, 1), font=text_font, text_color=text_color,
+                        sg.Text(text='', key=FIELD_YEAR, size=(4, 1), font=text_font, text_color=text_color,
                                 background_color=input_color),
                         sg.Text('Title:', font=label_font),
-                        sg.Text(text='', key=DOC_TITLE, size=(114, 1), font=text_font, text_color=text_color,
+                        sg.Text(text='', key=FIELD_TITLE, size=(114, 1), font=text_font, text_color=text_color,
                                 background_color=input_color, expand_x=True),
                     ],
                     [
                         sg.Text('Authors:', font=label_font),
-                        sg.Text(text='', key=DOC_AUTHORS, size=(121, 1), font=text_font, text_color=text_color,
+                        sg.Text(text='', key=FIELD_AUTHORS, size=(121, 1), font=text_font, text_color=text_color,
                                 background_color=input_color, expand_x=True),
                     ],
                     [
                         sg.Text('Kind:', font=label_font),
-                        sg.Text(text='', key=DOC_KIND, size=(20, 1), font=text_font, text_color=text_color,
-                                background_color=input_color),
-                        sg.Text('Origin:', font=label_font),
-                        sg.Text(text='', key=DOC_ORIGIN, size=(20, 1), font=text_font, text_color=text_color,
+                        sg.Text(text='', key=FIELD_KIND, size=(20, 1), font=text_font, text_color=text_color,
                                 background_color=input_color),
                         sg.Text('DOI:', font=label_font),
-                        sg.Text(text='', key=DOC_DOI, size=(30, 1), font=text_font, text_color=text_color,
+                        sg.Text(text='', key=FIELD_DOI, size=(30, 1), font=text_font, text_color=text_color,
+                                background_color=input_color),
+                    ],
+                    [
+                        sg.Text('Origin:', font=label_font),
+                        sg.Text(text='', key=FIELD_ORIGIN, size=(20, 1), font=text_font, text_color=text_color,
+                                background_color=input_color),
+                        sg.Text('Document type:', font=label_font),
+                        sg.Text(text='', key=FIELD_DOCUMENT_TYPE, size=(20, 1), font=text_font, text_color=text_color,
                                 background_color=input_color),
                         sg.Text('External key:', font=label_font),
-                        sg.Text(text='', key=DOC_EXTERNAL_KEY, size=(20, 1), font=text_font, text_color=text_color,
+                        sg.Text(text='', key=FIELD_EXTERNAL_KEY, size=(20, 1), font=text_font, text_color=text_color,
                                 background_color=input_color),
                     ],
                     [
                         sg.Text('Rejection reason:', font=label_font),
-                        sg.Text(text='', key=DOC_REASON, size=(114, 1), font=text_font, text_color=text_color,
+                        sg.Text(text='', key=FIELD_REASON, size=(114, 1), font=text_font, text_color=text_color,
                                 background_color=input_color, expand_x=True),
                     ],
                     [
                         sg.Column([
                             [sg.Text('Abstract', font=label_font)],
-                            [sg.Multiline(key=DOC_ABSTRACT, default_text='', size=(100, 20), disabled=True,
+                            [sg.Multiline(key=FIELD_ABSTRACT, default_text='', size=(100, 20), disabled=True,
                                           autoscroll=True, expand_x=True, expand_y=True)]
                         ], expand_x=True, expand_y=True),
                         sg.Column([
                             [sg.Text('Keywords', font=label_font)],
-                            [sg.Multiline(key=DOC_KEYWORDS, default_text='', size=(40, 20), disabled=True,
+                            [sg.Multiline(key=FIELD_KEYWORDS, default_text='', size=(40, 20), disabled=True,
                                           autoscroll=True, expand_y=True)]
                         ], expand_y=True),
                     ]
@@ -367,7 +378,7 @@ class Browser:
                     [
                         sg.Listbox([], key=LIST_DOC_REJECT, size=(94, 24), enable_events=True, visible=False,
                                    expand_x=True, expand_y=True),
-                        sg.Multiline(default_text='', key=DOC_METADATA, size=(94, 24), font=metadata_font,
+                        sg.Multiline(default_text='', key=FIELD_METADATA, size=(94, 24), font=metadata_font,
                                      disabled=True, visible=False, autoscroll=True, expand_x=True, expand_y=True)
                     ],
                     [
@@ -408,38 +419,40 @@ class Browser:
 
     def _update_document_details(self, document: domain.Document):
         if document is None:
-            self._window[DOC_ABSTRACT].update('')
-            self._window[DOC_AUTHORS].update('')
-            self._window[DOC_DOI].update('')
-            self._window[DOC_EXTERNAL_KEY].update('')
-            self._window[DOC_KEYWORDS].update('')
-            self._window[DOC_KIND].update('')
-            self._window[DOC_METADATA].update('')
-            self._window[DOC_ORIGIN].update('')
-            self._window[DOC_REASON].update('')
-            self._window[DOC_TITLE].update('')
-            self._window[DOC_YEAR].update('')
+            self._window[FIELD_ABSTRACT].update('')
+            self._window[FIELD_AUTHORS].update('')
+            self._window[FIELD_DOCUMENT_TYPE].update('')
+            self._window[FIELD_DOI].update('')
+            self._window[FIELD_EXTERNAL_KEY].update('')
+            self._window[FIELD_KEYWORDS].update('')
+            self._window[FIELD_KIND].update('')
+            self._window[FIELD_METADATA].update('')
+            self._window[FIELD_ORIGIN].update('')
+            self._window[FIELD_REASON].update('')
+            self._window[FIELD_TITLE].update('')
+            self._window[FIELD_YEAR].update('')
             self._window[BUTTON_DOC_PRESELECT].update(disabled=True)
             self._window[BUTTON_DOC_SELECT].update(disabled=True)
             self._window[BUTTON_DOC_RESET].update(disabled=True)
             self._window[LABEL_DOC_REJECT].update(visible=False)
             self._window[LIST_DOC_REJECT].update(visible=False)
             return
-        self._window[DOC_ABSTRACT].update(document.abstract)
-        self._window[DOC_AUTHORS].update(self.author_names(document.authors))
-        self._window[DOC_DOI].update(document.doi)
-        self._window[DOC_EXTERNAL_KEY].update(document.external_key)
-        self._window[DOC_KEYWORDS].update(self.keyword_names(document.keywords))
-        self._window[DOC_KIND].update(document.kind)
-        self._window[DOC_METADATA].update(document.review_metadata.content
+        self._window[FIELD_ABSTRACT].update(document.abstract)
+        self._window[FIELD_AUTHORS].update(self.author_names(document.authors))
+        self._window[FIELD_DOCUMENT_TYPE].update(document.document_type)
+        self._window[FIELD_DOI].update(document.doi)
+        self._window[FIELD_EXTERNAL_KEY].update(document.external_key)
+        self._window[FIELD_KEYWORDS].update(self.keyword_names(document.keywords))
+        self._window[FIELD_KIND].update(document.kind)
+        self._window[FIELD_METADATA].update(document.review_metadata.content
                                           if document.review_metadata is not None else '')
-        self._window[DOC_ORIGIN].update(document.generator)
+        self._window[FIELD_ORIGIN].update(document.generator)
         if document.reason is not None:
-            self._window[DOC_REASON].update(document.reason.description)
+            self._window[FIELD_REASON].update(document.reason.description)
         else:
-            self._window[DOC_REASON].update('')
-        self._window[DOC_TITLE].update(document.title)
-        self._window[DOC_YEAR].update(document.year)
+            self._window[FIELD_REASON].update('')
+        self._window[FIELD_TITLE].update(document.title)
+        self._window[FIELD_YEAR].update(document.year)
         self._window[BUTTON_DOC_PRESELECT].update(disabled=document.is_tagged(domain.TAG_PRE_ACCEPTED))
         self._window[BUTTON_DOC_SELECT].update(disabled=not document.is_tagged(domain.TAG_PRE_ACCEPTED))
         element_visible = document.is_tagged(domain.TAG_IMPORTED) or document.is_tagged(domain.TAG_PRE_ACCEPTED)
@@ -447,7 +460,7 @@ class Browser:
         self._window[LIST_DOC_REJECT].update(visible=element_visible)
         element_visible = document.is_tagged(domain.TAG_ACCEPTED)
         self._window[LABEL_DOC_METADATA].update(visible=element_visible)
-        self._window[DOC_METADATA].update(visible=element_visible)
+        self._window[FIELD_METADATA].update(visible=element_visible)
         self._window[BUTTON_EDIT_DOC_METADATA].update(visible=element_visible)
 
     def _update_reject_reasons(self):
