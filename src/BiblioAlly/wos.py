@@ -15,6 +15,7 @@ class WoSBibTexTranslator(bibtex.Translator):
         return super()._affiliations_from_field(affiliations_field, separator)
 
     def _document_from_proto_document(self, proto_document):
+        bibtex.Translator._translate_kind(proto_document)
         kind = proto_document['type']
         fields = proto_document['field']
 
@@ -73,6 +74,9 @@ class WoSBibTexTranslator(bibtex.Translator):
         return document
 
     def _proto_document_from_document(self, document: domain.Document):
+        kind = document.kind
+        if kind == 'proceedings':
+            kind = 'inproceedings'
         fields = dict()
         fields['external_key'] = document.external_key
 
@@ -110,7 +114,7 @@ class WoSBibTexTranslator(bibtex.Translator):
             fields['DOI'] = self._curly(str(document.doi), rep=2)
         fields['Abstract'] = self._curly(document.abstract, rep=2)
         if document.journal is not None:
-            if document.kind == 'article':
+            if kind == 'article':
                 fields['Journal'] = self._curly(str(document.journal), rep=2)
             else:
                 fields['Booktitle'] = self._curly(str(document.journal), rep=2)
@@ -133,7 +137,7 @@ class WoSBibTexTranslator(bibtex.Translator):
             fields['Number-of-Cited-References'] = self._curly(f'{len(references)}', rep=2)
 
         proto_document = {
-            'type': document.kind,
+            'type': kind,
             'fields': fields
         }
         return proto_document

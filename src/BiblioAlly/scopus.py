@@ -5,9 +5,8 @@ from . import domain
 
 class ScopusTranslator(bibtex.Translator):
     def _document_from_proto_document(self, proto_document):
-        kind = proto_document['type'].lower()
-        if kind == 'conference':
-            kind = 'inproceddings'
+        bibtex.Translator._translate_kind(proto_document)
+        kind = proto_document['type']
         fields = proto_document['field']
 
         title = self._unbroken(self._uncurlied(fields['title']))
@@ -51,6 +50,9 @@ class ScopusTranslator(bibtex.Translator):
         return document
 
     def _proto_document_from_document(self, document: domain.Document):
+        kind = document.kind
+        if kind == 'proceedings':
+            kind = 'conference'
         fields = dict()
         fields['external_key'] = document.external_key
 
@@ -103,7 +105,7 @@ class ScopusTranslator(bibtex.Translator):
         fields['source'] = self._curly(document.generator)
 
         proto_document = {
-            'type': document.kind,
+            'type': kind,
             'fields': fields
         }
         return proto_document

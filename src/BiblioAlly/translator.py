@@ -337,6 +337,11 @@ special_names: Dict[str, str] = {
 
 
 class Translator(bt.BaseTranslator):
+    kinds = {
+        'conference': 'proceedings',
+        'inproceedings': 'proceedings',
+    }
+
     def documents_from_file(self, filename):
         with open(filename, "r", encoding="utf-8") as texFile:
             if texFile.mode != "r":
@@ -350,6 +355,17 @@ class Translator(bt.BaseTranslator):
         proto_documents = self._proto_documents_from_documents(documents)
         bibtexts = [self._as_bibtex(pd) for pd in proto_documents]
         return '\n'.join(bibtexts)
+
+    def _as_bibtex(self, proto_document):
+        kind = proto_document['type']
+        fields = proto_document['fields']
+        external_key = fields['external_key']
+        del fields['external_key']
+        key_value = []
+        for key, value in fields.items():
+            key_value.append(f'{key} = {value}')
+        bibtex = f'@{kind}' + '{' + f'{external_key}\n' + ',\n'.join(key_value) + '\n}\n'
+        return bibtex
 
     def _documents_from_proto_documents(self, proto_documents):
         documents = []
@@ -365,16 +381,11 @@ class Translator(bt.BaseTranslator):
             proto_documents.append(proto_document)
         return proto_documents
 
-    def _as_bibtex(self, proto_document):
-        kind = proto_document['type']
-        fields = proto_document['fields']
-        external_key = fields['external_key']
-        del fields['external_key']
-        key_value = []
-        for key, value in fields.items():
-            key_value.append(f'{key} = {value}')
-        bibtex = f'@{kind}' + '{' + f'{external_key}\n' + ',\n'.join(key_value) + '\n}\n'
-        return bibtex
+    @staticmethod
+    def _translate_kind(proto_document):
+        kind = proto_document['type'].strip().lower()
+        if kind in Translator.kinds:
+            proto_document['type'] = Translator.kinds[kind]
 
     @staticmethod
     def _expand_affiliations(affiliations, authors):
