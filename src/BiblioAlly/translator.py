@@ -348,7 +348,7 @@ class Translator(bt.BaseTranslator):
 
     def bibtext_from_documents(self, documents):
         proto_documents = self._proto_documents_from_documents(documents)
-        bibtexts = [Translator._as_bibtex(pd) for pd in proto_documents]
+        bibtexts = [self._as_bibtex(pd) for pd in proto_documents]
         return '\n'.join(bibtexts)
 
     def _documents_from_proto_documents(self, proto_documents):
@@ -365,8 +365,7 @@ class Translator(bt.BaseTranslator):
             proto_documents.append(proto_document)
         return proto_documents
 
-    @staticmethod
-    def _as_bibtex(proto_document):
+    def _as_bibtex(self, proto_document):
         kind = proto_document['type']
         fields = proto_document['fields']
         external_key = fields['external_key']
@@ -541,11 +540,11 @@ class Translator(bt.BaseTranslator):
         return authors
 
     @staticmethod
-    def _curly(value: str, separator: str = ",") -> str:
+    def _curly(value: str, separator: str = ",", rep: int = 1) -> str:
         if type(value) is list:
-            curly_value = "{" + separator.join(value) + "}"
+            curly_value = "{"*rep + separator.join(value) + "}"*rep
         else:
-            curly_value = "{" + value + "}"
+            curly_value = "{"*rep + value + "}"*rep
         return curly_value
 
     @staticmethod
