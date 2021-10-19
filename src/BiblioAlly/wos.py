@@ -124,6 +124,9 @@ class WoSBibTexTranslator(bibtex.Translator):
             fields['Language'] = self._curly(str(document.language), rep=2)
         keywords = [keyword.name for keyword in document.keywords]
         fields['Keywords'] = self._curly(keywords, ', ', rep=2)
+        if document.document_type is not None:
+            fields['Document-Type'] = self._curly(document.document_type)
+        fields['Source'] = self._curly(document.generator)
         if len(document.references) > 0:
             references = [r.description for r in document.references]
             fields['Cited-References'] = self._curly(references, '.\n', rep=2)

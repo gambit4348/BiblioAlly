@@ -79,6 +79,9 @@ class AcmDLTranslator(bibtex.Translator):
             fields['number'] = self._curly(str(document.number))
         keywords = [keyword.name for keyword in document.keywords]
         fields['keywords'] = self._curly(keywords, ', ')
+        if document.document_type is not None:
+            fields['document_type'] = self._curly(document.document_type)
+        fields['source'] = self._curly(document.generator)
 
         proto_document = {
             'type': document.kind,
