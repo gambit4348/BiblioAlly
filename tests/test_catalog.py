@@ -36,6 +36,17 @@ class TestCatalog(TestCase):
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
 
+    def test_export_to_ieee_xplore(self):
+        # Arrange
+        ally = ba.Catalog(self.catalog_path)
+
+        # Act
+        export_count = ally.export_to_file(ieee.IeeeXplore, bibtex_path + 'exported_ieee_xplore.bib',
+                                           should_export=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
+
+        # Assert
+        self.assertEqual(export_count, 72, 'Unexpected export count')
+
     def test_export_to_scopus(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)

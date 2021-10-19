@@ -59,6 +59,78 @@ class IeeeXTranslator(bibtex.Translator):
                 document.volume = self._uncurlied(fields['volume'])
         return document
 
+    def _proto_document_from_document(self, document: domain.Document):
+        fields = dict()
+        fields['external_key'] = document.external_key
+
+        doc_authors = document.authors
+        doc_authors.sort(key=lambda doc_author: doc_author.first)
+        doc_authors.reverse()
+        all_authors = [(doc_author.author.long_name if doc_author.author.long_name is not None
+                        else doc_author.author.short_name) for doc_author in doc_authors]
+        fields['author'] = self._curly(all_authors, separator=' and ')
+
+        if document.journal is not None:
+            if document.kind == 'article':
+                fields['journal'] = self._curly(str(document.journal), rep=2)
+            else:
+                fields['booktitle'] = self._curly(str(document.journal), rep=2)
+        fields['title'] = self._curly(document.title)
+
+        affiliations = []
+        for doc_author in doc_authors:
+            institution = doc_author.institution
+            if institution is not None:
+                affiliation = ', '.join([institution.name, institution.country])
+                affiliations.append(affiliation)
+        if len(affiliations) > 0:
+            fields['affiliation'] = self._curly(affiliations, '; ')
+
+        fields['year'] = self._curly(str(document.year))
+        if document.international_number is not None:
+            fields['ISSN'] = self._curly(str(document.international_number))
+        if document.publisher is not None:
+            fields['publisher'] = self._curly(str(document.publisher))
+        if document.address is not None:
+            fields['address'] = self._curly(str(document.address))
+        if document.doi is not None:
+            fields['doi'] = self._curly(str(document.doi))
+        if document.international_number is not None:
+            fields['url'] = self._curly(str(document.url))
+        fields['abstract'] = self._curly(document.abstract)
+        if document.pages is not None:
+            fields['pages'] = self._curly(str(document.pages))
+        if document.volume is not None:
+            fields['volume'] = self._curly(str(document.volume))
+        if document.number is not None:
+            fields['number'] = self._curly(str(document.number))
+        if document.language is not None:
+            fields['language'] = self._curly(str(document.language))
+        keywords = [keyword.name for keyword in document.keywords]
+        fields['keywords'] = self._curly(keywords, ';')
+        if len(document.references) > 0:
+            fields['references'] = self._curly('; '.join(document.references))
+        if document.document_type is not None:
+            fields['document_type'] = self._curly(document.document_type)
+        fields['source'] = self._curly(document.generator)
+
+        proto_document = {
+            'type': document.kind,
+            'fields': fields
+        }
+        return proto_document
+
+    def _as_bibtex(self, proto_document):
+        kind = proto_document['type'].upper()
+        fields = proto_document['fields']
+        external_key = fields['external_key']
+        del fields['external_key']
+        key_value = []
+        for key, value in fields.items():
+            key_value.append(f'{key}={value}')
+        bibtex = f'@{kind}' + '{' + f'{external_key},\n' + ',\n'.join(key_value) + '\n}'
+        return bibtex
+
 
 IeeeXplore = "IeeeXplore"
 cat.Catalog.translators[IeeeXplore] = IeeeXTranslator
