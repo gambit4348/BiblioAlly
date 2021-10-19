@@ -36,6 +36,17 @@ class TestCatalog(TestCase):
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
 
+    def test_export_to_scopus(self):
+        # Arrange
+        ally = ba.Catalog(self.catalog_path)
+
+        # Act
+        export_count = ally.export_to_file(scopus.Scopus, bibtex_path + 'exported_scopus.bib',
+                                           should_export=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
+
+        # Assert
+        self.assertEqual(export_count, 72, 'Unexpected export count')
+
     def test_export_to_web_of_science(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
@@ -317,7 +328,7 @@ class TestCatalog(TestCase):
 
     def test_update_document_summary(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path, echo=True)
+        ally = ba.Catalog(self.catalog_path)
         document_id = 3
         document = ally.document_by(id=document_id)
         if document.review_metadata is None:

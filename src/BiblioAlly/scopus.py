@@ -4,53 +4,6 @@ from . import domain
 
 
 class ScopusTranslator(bibtex.Translator):
-    def bibtex_from_document(self, document):
-        lines = []
-        lines.append("author=" + self._curly([(author.longName if author.longName is not None
-                                                 else author.shortName) for author in document.authors], " and "))
-        lines.append("title=" + self._curly(document.title))
-        if document.journal is not None:
-            lines.append("journal=" + self._curly(document.journal))
-        lines.append("year=" + self._curly(str(document.year)))
-        if document.pages is not None:
-            lines.append("pages=" + self._curly(str(document.pages)))
-        if document.volume is not None:
-            lines.append("volume=" + self._curly(str(document.volume)))
-        if document.number is not None:
-            lines.append("number=" + self._curly(str(document.number)))
-        if document.doi is not None:
-            lines.append("doi=" + self._curly(document.doi))
-        affiliations = []
-        for author in document.authors:
-            if author in document.affiliations:
-                affiliation = document.affiliations[author]
-                affiliations.append(affiliation)
-
-        def by_first(item):
-            return item.first
-
-        affiliations.sort(key=by_first, reverse=True)
-        if len(affiliations) > 0 and not affiliations[0].first:
-            raise NameError('HiThere')
-        bibtex_affiliations = []
-        for affiliation in affiliations:
-            country = affiliation.country if affiliation.country is not None else 'Unknown'
-            description = affiliation.description if affiliation.description is not None else 'Unknown'
-            bibtex_affiliations.append(', '.join([description, country]))
-        lines.append("affiliation=" + self._curly(bibtex_affiliations, "; "))
-        lines.append("author_keywords=" + self._curly(document.keywords))
-        lines.append("abstract=" + self._curly(document.abstract))
-        lines.append("references=" + self._curly('; '.join(document.references)))
-        if document.language is not None:
-            lines.append("language=" + self._curly(str(document.language)))
-        if document.document_type is not None:
-            lines.append("document_type=" + self._curly(str(document.document_type)))
-        lines.append("generator=" + self._curly(document.generator))
-
-        bibTex = ",\n".join(lines)
-        bibTex = "@" + document.kind.upper() + "{" + document.bibId + ",\n" + bibTex + "\n}"
-        return bibTex
-
     def _document_from_proto_document(self, proto_document):
         kind = proto_document['type'].lower()
         if kind == 'conference':
@@ -96,6 +49,75 @@ class ScopusTranslator(bibtex.Translator):
         return document
 
         return document
+
+    def _proto_document_from_document(self, document: domain.Document):
+        fields = dict()
+        fields['external_key'] = document.external_key
+
+        doc_authors = document.authors
+        doc_authors.sort(key=lambda doc_author: doc_author.first)
+        doc_authors.reverse()
+        all_authors = [(doc_author.author.long_name if doc_author.author.long_name is not None
+                        else doc_author.author.short_name) for doc_author in doc_authors]
+        fields['author'] = self._curly(all_authors, separator=' and ')
+
+        fields['title'] = self._curly(document.title)
+
+        affiliations = []
+        for doc_author in doc_authors:
+            institution = doc_author.institution
+            if institution is not None:
+                affiliation = ', '.join([institution.name, institution.country])
+                affiliations.append(affiliation)
+        if len(affiliations) > 0:
+            fields['affiliation'] = self._curly(affiliations, '; ')
+
+        fields['year'] = self._curly(str(document.year))
+        if document.international_number is not None:
+            fields['issn'] = self._curly(str(document.international_number))
+        if document.publisher is not None:
+            fields['publisher'] = self._curly(str(document.publisher))
+        if document.address is not None:
+            fields['address'] = self._curly(str(document.address))
+        if document.doi is not None:
+            fields['doi'] = self._curly(str(document.doi))
+        if document.international_number is not None:
+            fields['url'] = self._curly(str(document.url))
+        fields['abstract'] = self._curly(document.abstract)
+        if document.journal is not None:
+            fields['journal'] = self._curly(str(document.journal))
+        if document.pages is not None:
+            fields['pages'] = self._curly(str(document.pages))
+        if document.volume is not None:
+            fields['volume'] = self._curly(str(document.volume))
+        if document.number is not None:
+            fields['number'] = self._curly(str(document.number))
+        if document.language is not None:
+            fields['language'] = self._curly(str(document.language))
+        keywords = [keyword.name for keyword in document.keywords]
+        fields['author_keywords'] = self._curly(keywords, ';  ')
+        if len(document.references) > 0:
+            fields['references'] = self._curly('; '.join(document.references))
+        if document.document_type is not None:
+            fields['document_type'] = self._curly(document.document_type)
+        fields['source'] = self._curly(document.generator)
+
+        proto_document = {
+            'type': document.kind,
+            'fields': fields
+        }
+        return proto_document
+
+    def _as_bibtex(self, proto_document):
+        kind = proto_document['type'].upper()
+        fields = proto_document['fields']
+        external_key = fields['external_key']
+        del fields['external_key']
+        key_value = []
+        for key, value in fields.items():
+            key_value.append(f'{key}={value}')
+        bibtex = f'@{kind}' + '{' + f'{external_key},\n' + ',\n'.join(key_value) + '\n}\n'
+        return bibtex
 
 
 Scopus = "Scopus"
