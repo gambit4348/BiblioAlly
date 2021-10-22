@@ -102,8 +102,6 @@ class Document(Base):
     keywords = relationship('Keyword', secondary=Document_Keyword)
     tags = relationship('DocumentTag', cascade='all, delete-orphan', back_populates='document')
     references = relationship('Reference', cascade='all, delete', back_populates='document')
-    reason_id = Column(Integer, ForeignKey('Reason.id'))
-    reason = relationship('Reason')
     original_document_id = Column(Integer, ForeignKey('Document.id'))
     original_document = relationship('Document')
     review_metadata = relationship('DocumentMetadata', uselist=False, back_populates='document',
@@ -210,25 +208,6 @@ class Keyword(Base):
 
     def __repr__(self):
         return f'Keyword(id={self.id!r}, name={self.name!r})'
-
-
-class Reason(Base):
-    __tablename__ = 'Reason'
-    id = Column(Integer, primary_key=True)
-    description = Column(String(255), nullable=False, unique=True)
-    import_date = Column(Date, nullable=False)
-
-    def __init__(self, description, import_date=None):
-        Base.__init__(self)
-        self.description = description
-        if import_date is None:
-            self.import_date = datetime.date.today()
-
-    def __repr__(self):
-        return f'Reason(id={self.id!r}, name={self.description!r})'
-
-    def __str__(self):
-        return self.description
 
 
 class Reference(Base):

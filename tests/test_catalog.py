@@ -18,7 +18,6 @@ class TestCatalog(TestCase):
 
         # Act
         all_documents_dict = ba.as_dict(all_documents,
-                                        reason=lambda reason: reason.description if reason is not None else None,
                                         tags=lambda tags: [t.tag.name for t in tags])
 
         # Assert
@@ -220,52 +219,6 @@ class TestCatalog(TestCase):
         self.assertGreater(len(documents), 0, f'No documents not tagged as {untag} were retrieved')
         for doc in documents:
             self.assertTrue(doc.is_tagged(tag), f'Document {doc} not tagged as {tag}')
-
-    def test_retrieve_all_reasons(self):
-        # Arrange
-        ally = ba.Catalog(self.catalog_path)
-        all_reasons = ally.reasons_by()
-        updated = False
-        if len(all_reasons) == 0:
-            ally.add_reason(description='No access')
-            ally.add_reason(description='Off topic')
-            ally.add_reason(description='Off topic the cites the topic')
-            updated = True
-        if updated:
-            ally.commit()
-            ally.close()
-            ally = ba.Catalog(self.catalog_path)
-
-        # Act
-        all_reasons = ally.reasons_by()
-
-        # Assert
-        self.assertGreater(len(all_reasons), 0, f'No Reasons were retrieved')
-
-    def test_retrieve_one_reason(self):
-        # Arrange
-        ally = ba.Catalog(self.catalog_path)
-        all_reasons = ally.reasons_by()
-        updated = False
-        if len(all_reasons) == 0:
-            ally.add_reason('No access')
-            ally.add_reason('Off topic')
-            ally.add_reason('Off topic the cites the topic')
-            updated = True
-        if updated:
-            ally.commit()
-            ally.close()
-            ally = ba.Catalog(self.catalog_path)
-
-        # Act
-        description = 'No access'
-        all_reasons = ally.reasons_by(description=description)
-
-        # Assert
-        self.assertGreater(len(all_reasons), 0, f'No Reasons were retrieved')
-        self.assertEqual(len(all_reasons), 1, f'More than one Reasons were retrieved')
-        the_reason = all_reasons[0]
-        self.assertEqual(the_reason.description, description, f'Unexpected Reason was retrieved: {the_reason}')
 
     def test_add_document_metadata(self):
         # Arrange

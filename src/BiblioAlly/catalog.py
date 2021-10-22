@@ -18,27 +18,6 @@ class Catalog:
         if catalog_path is not None:
             self.open(catalog_path, echo, future)
 
-    def add_reason(self, reason: domain.Reason = None, description: str = None) -> domain.Reason:
-        """
-        Add a Reason to the catalog, that will later be persisted by calling the Catalog.commit() method.
-
-        Parameters:
-            reason (domain.Reason): the instance to be added.
-            description (str): the description of the Reason to be added.
-
-        Returns:
-            domain.Reason: The same instance passed, if any,  the newly created instance if only the description was
-            passed, if any, else, None.
-
-        if both parameters are passed, description will be ignored.
-        """
-        if reason is None:
-            if description is None:
-                return None
-            reason = domain.Reason(description=description)
-        self._session.add(reason)
-        return reason
-
     def add_summary(self, summary: domain.DocumentMetadata) -> domain.DocumentMetadata:
         """
         Add a document summary to the catalog, that will later be persisted by calling the Catalog.commit() method.
@@ -226,26 +205,6 @@ class Catalog:
             catalog.tags_by(name='accepted')
         """
         return self._session.execute(select(domain.Tag).filter_by(**kwargs)).scalars().all()
-
-    def reasons_by(self, **kwargs):
-        """
-        Query-by-example for reasons.
-
-        Parameters:
-            **kwargs :
-                a list of attribute names and values that will work as an example of the desired instances.
-
-        Returns:
-            a list containing all the Reasons, if any, that meet the criteria passed.
-
-        If no parameters are passed, all instances will be returned.
-
-        If no instance can be found with the criteria specified, an empty list is returned.
-
-        Example:
-            catalog.reasons_by(description='No access')
-        """
-        return self._session.execute(select(domain.Reason).filter_by(**kwargs)).scalars().all()
 
     def import_from_file(self, source: str, filename: str):
         """
@@ -565,7 +524,7 @@ class Catalog:
 all_document_fields = [
             'id', 'title', 'year', 'journal', 'external_key', 'doi', 'document_type', 'kind',
             'abstract', 'pages', 'volume', 'number', 'url', 'language', 'generator', 'import_date',
-            'authors', 'keywords', 'tags', 'references', 'reason', 'review_metadata', 'original_document'
+            'authors', 'keywords', 'tags', 'references', 'review_metadata', 'original_document'
         ]
 
 
