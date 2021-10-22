@@ -1,5 +1,6 @@
 import datetime
 from sqlalchemy import Table, ForeignKey, Column, Integer, String, Date, Boolean, Text
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import registry, relationship
 
 TAG_ACCEPTED = 'accepted'
@@ -126,20 +127,47 @@ class Document(Base):
             for affiliation in affiliations:
                 self.authors.append(affiliation)
 
+    @hybrid_property
+    def first_author(self):
+        if not hasattr(self, '_first_author'):
+            setattr(self, '_first_author', self._the_first_author())
+        return self._first_author
+
     def has_keyword(self, keyword_name):
         keywords = [keyword for keyword in self.keywords if keyword.name == keyword_name]
         return len(keywords) > 0
 
-    def is_tagged(self, tag_name):
-        tags = [doc_tag.tag for doc_tag in self.tags if doc_tag.tag.name == tag_name]
+    def is_tagged(self, tag):
+        if type(tag) is str:
+            tags = [doc_tag.tag for doc_tag in self.tags if doc_tag.tag.name == tag]
+        elif type(tag) is Tag:
+            tags = [doc_tag.tag for doc_tag in self.tags if doc_tag.tag.id == tag.id]
         return len(tags) > 0
 
-    def untag(self, tag_name):
-        for doc_tag in self.tags:
-            if doc_tag.tag.name == tag_name:
-                self.tags.remove(doc_tag)
-                break
+    def untag(self, tags):
+        if type(tags) is not list:
+            tags = [tags]
+        for tag in tags:
+            if type(tag) is str:
+                for doc_tag in self.tags:
+                    if doc_tag.tag.name == tag:
+                        self.tags.remove(doc_tag)
+                        break
+            elif type(tag) is Tag:
+                for doc_tag in self.tags:
+                    if doc_tag.tag.id == tag.id:
+                        self.tags.remove(doc_tag)
+                        break
         return self.tags
+
+    def _the_first_author(self) -> Author:
+        for document_author in self.authors:
+            if document_author.first:
+                return document_author.author
+        if len(self.authors) > 0:
+            return self.authors[0].author
+        return None
+
 
     def __repr__(self):
         return f'Document(id={self.id!r}, title={self.title!r}, year={self.year!r}, doi={self.doi!r})'
@@ -217,7 +245,16 @@ class Reference(Base):
 class Tag(Base):
     __tablename__ = 'Tag'
     id = Column(Integer, primary_key=True)
-    name = Column(String(30), nullable=False, unique=True, index=True)
+    name = Column(String(255), nullable=False, unique=True, index=True)
+    create_date = Column(Date, nullable=False)
+    system_tag = Column(Boolean, nullable=False)
+
+    def __init__(self, name, create_date=None):
+        Base.__init__(self)
+        self.name = name
+        self.system_tag = False
+        if create_date is None:
+            self.create_date = datetime.date.today()
 
     def __repr__(self):
-        return f'Tag(id={self.id!r}, name={self.name!r})'
+        return f'Tag(id={self.id!r}, name={self.name!r}, import_date={self.create_date!r})'

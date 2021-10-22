@@ -187,6 +187,46 @@ class Catalog:
         """
         return self._session.execute(select(domain.Keyword).filter_by(**kwargs)).scalars().all()
 
+    def tag_by(self, **kwargs):
+        """
+        Query-by-example for one single tag.
+
+        Parameters:
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instance.
+
+        Returns:
+            one instance, if any, of Tag that corresponds to the criteria passed.
+
+        If no instance can be found, the return is None. On the other hand, if
+        more than one instance corresponds to the criteria specified, one single instance is returned but there is
+        no way to predict which one.
+
+        Example:
+            catalog.tag_by(name='accepted')
+        """
+        return self._session.execute(select(domain.Tag).filter_by(**kwargs)).scalars().first()
+
+    def tags_by(self, **kwargs):
+        """
+        Query-by-example for tags.
+
+        Parameters:
+            **kwargs :
+                a list of attribute names and values that will work as an example of the desired instances.
+
+        Returns:
+            a list containing all the Tags, if any, that meet the criteria passed.
+
+        If no parameters are passed, all instances will be returned.
+
+        If no instance can be found with the criteria specified, an empty list is returned.
+
+        Example:
+            catalog.tags_by(name='accepted')
+        """
+        return self._session.execute(select(domain.Tag).filter_by(**kwargs)).scalars().all()
+
     def reasons_by(self, **kwargs):
         """
         Query-by-example for reasons.
@@ -345,22 +385,22 @@ class Catalog:
         self._engine = create_engine('sqlite+pysqlite:///' + catalog_path, echo=echo, future=future)
         self._update_database(self._engine, domain.biblioally_mapper)
         self._session = Session(self._engine)
-        self._tag_by_name(domain.TAG_IMPORTED)
-        self._tag_by_name(domain.TAG_DUPLICATE)
-        self._tag_by_name(domain.TAG_EXCLUDED)
-        self._tag_by_name(domain.TAG_PRE_ACCEPTED)
-        self._tag_by_name(domain.TAG_ACCEPTED)
+        self._tag_by_name(domain.TAG_IMPORTED, auto_create=True)
+        self._tag_by_name(domain.TAG_DUPLICATE, auto_create=True)
+        self._tag_by_name(domain.TAG_EXCLUDED, auto_create=True)
+        self._tag_by_name(domain.TAG_PRE_ACCEPTED, auto_create=True)
+        self._tag_by_name(domain.TAG_ACCEPTED, auto_create=True)
         self._session.commit()
 
-    def tag(self, document: domain.Document, tag_name: str):
+    def tag(self, document: domain.Document, tags):
         """
         Tags a document.
 
         Parameters:
             document :
                 the document to be tagged.
-            tag_name :
-                the name of the tag.
+            tags :
+                the tag, tag name, list of tags or list of tag names.
 
         Returns:
             the document after being tagged.
@@ -368,7 +408,7 @@ class Catalog:
         If the document is already that tagged, nothing happens. If a Tag instance does not exist for the tag name
         passed, it will be created, otherwise the existing Tag will be used.
         """
-        return self._tag(document, tag_name)
+        return self._tag(document, tags)
 
     @staticmethod
     def untag(document, tag_name):
@@ -452,19 +492,29 @@ class Catalog:
                 self._session.add(existing_keyword)
         return existing_keyword
 
-    def _tag(self, document, tag_name):
-        if document.is_tagged(tag_name):
-            return document
-        the_tag = self._tag_by_name(tag_name)
-        doc_tag = domain.DocumentTag(tag=the_tag)
-        document.tags.append(doc_tag)
+    def _tag(self, document, tags):
+        if type(tags) is not list:
+            tags = [tags]
+        for tag in tags:
+            if document.is_tagged(tag):
+                continue
+            if type(tag) is str:
+                the_tag = self._tag_by_name(tag, auto_create=True)
+            elif type(tag) is domain.Tag:
+                the_tag = tag
+            doc_tag = domain.DocumentTag(tag=the_tag)
+            document.tags.append(doc_tag)
         return document
 
     def _tag_by_name(self, tag_name, auto_create=True):
-        existing_tag = self._session.execute(select(domain.Tag).filter_by(name=tag_name)).scalars().first()
+        existing_tag = self.tag_by(name=tag_name)
         if existing_tag is None:
             if auto_create:
                 existing_tag = domain.Tag(name=tag_name)
+                existing_tag.system_tag = tag_name in [
+                    domain.TAG_ACCEPTED, domain.TAG_DUPLICATE, domain.TAG_EXCLUDED, domain.TAG_IMPORTED,
+                    domain.TAG_PRE_ACCEPTED
+                ]
                 self._session.add(existing_tag)
         return existing_tag
 

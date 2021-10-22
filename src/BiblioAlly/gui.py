@@ -1,6 +1,8 @@
 import datetime
 
 import PySimpleGUI as sg
+from PySimpleGUI import LISTBOX_SELECT_MODE_MULTIPLE
+
 from . import catalog as cat
 from . import domain
 
@@ -21,6 +23,8 @@ BUTTON_TAG_PRE_SELECTED = '-TAG-PRE-SELECTED-'
 BUTTON_TAG_REJECTED = '-TAG-REJECTED-'
 BUTTON_TAG_SELECTED = '-TAG-SELECTED-'
 
+BUTTON_TAG_FILTERS = '-TAG-FILTERS-'
+
 TABLE_DOCUMENTS = '-DOCUMENTS-'
 FIELD_ABSTRACT = '-DOC-ABSTRACT-'
 FIELD_AUTHORS = '-DOC-AUTHORS-'
@@ -31,7 +35,7 @@ FIELD_KEYWORDS = '-DOC-KEYWORDS-'
 FIELD_KIND = '-DOC-KIND-'
 FIELD_METADATA = '-DOC-METADATA-'
 FIELD_ORIGIN = '-DOC-ORIGIN-'
-FIELD_REASON = '-DOC-REASON-'
+FIELD_TAGS = '-DOC-TAGS-'
 FIELD_TITLE = '-DOC-TITLE-'
 FIELD_YEAR = '-DOC-YEAR-'
 
@@ -71,9 +75,6 @@ preselect_color = ('#ECFFFF', '#37A4F6')
 select_color = ('#ECFFFF', '#03A399')
 input_color = '#36394C'
 
-doc_headings = ['Year', 'Title', 'Authors', 'Kind', 'Origin', 'Tags']
-doc_widths = [4, 95, 45, 15, 15, 20]
-
 # Add your new theme colors and settings
 sg.LOOK_AND_FEEL_TABLE['BiblioAllyTheme'] = {
     'BACKGROUND': '#212735',
@@ -102,6 +103,7 @@ class Browser:
         self._active_tags = [
             domain.TAG_ACCEPTED, domain.TAG_DUPLICATE, domain.TAG_EXCLUDED, domain.TAG_IMPORTED, domain.TAG_PRE_ACCEPTED
         ]
+        self._additional_tags = []
         self._selected_document = None
         self._window = None
 
@@ -129,13 +131,18 @@ class Browser:
             if event == TABLE_DOCUMENTS and values[TABLE_DOCUMENTS]:
                 row_index = values[TABLE_DOCUMENTS][0]
                 self._select_document_by_index(row_index)
+            elif event == BUTTON_TAG_FILTERS:
+                if self._handle_filters():
+                    self._filter_documents()
+                    self._update_table()
+                    self._select_document_by_index(0)
             elif event in filter_buttons:
                 self._toggle_filter_button(event)
                 self._filter_documents()
                 self._update_table()
                 self._select_document_by_index(0)
             elif event == LIST_DOC_REJECT:
-                self._handle_reject(values, row_index)
+                self._handle_reject(values[LIST_DOC_REJECT], row_index)
             elif event == BUTTON_EDIT_DOC_METADATA:
                 self._edit_metadata()
             elif self._selected_document is not None:
@@ -169,15 +176,13 @@ class Browser:
         document.reason = None
         self._catalog.commit()
 
-    def reject_document(self, document: domain.Document, reason: domain.Reason):
-        self._catalog.tag(document, domain.TAG_EXCLUDED)
+    def reject_document(self, document: domain.Document, reason_tags):
+        if type(reason_tags) is not list:
+            reason_tags = [reason_tags]
         document.untag(domain.TAG_IMPORTED)
-        if type(reason) is str:
-            new_reason = domain.Reason(reason)
-            reason = new_reason
-        document.reason = reason
+        self._catalog.tag(document, [domain.TAG_EXCLUDED] + reason_tags)
         self._catalog.commit()
-        return reason
+        return [document_tag.tag for document_tag in document.tags]
 
     def select_document(self, document: domain.Document):
         self._catalog.tag(document, domain.TAG_ACCEPTED)
@@ -186,16 +191,18 @@ class Browser:
         self._catalog.commit()
 
     def reset_document(self, document: domain.Document):
+        self._catalog.untag(document, [document_tag.tag for document_tag in document.tags])
         self._catalog.tag(document, domain.TAG_IMPORTED)
-        self._catalog.untag(document, domain.TAG_ACCEPTED)
-        self._catalog.untag(document, domain.TAG_EXCLUDED)
-        self._catalog.untag(document, domain.TAG_PRE_ACCEPTED)
         document.reason = None
         self._catalog.commit()
 
     def _document_is_in_filter(self, document: domain.Document, active_tags):
-        tags = [t.tag.name for t in document.tags]
-        in_filter = all(f in active_tags for f in tags)
+        document_tags = [document_tag.tag.name for document_tag in document.tags]
+        same_tags = list(filter(lambda tag: tag in active_tags, document_tags))
+        in_filter = len(same_tags) > 0
+        if len(self._additional_tags) > 0:
+            same_tags = list(filter(lambda tag: tag in self._additional_tags, document_tags))
+            in_filter = in_filter and len(same_tags) > 0
         return in_filter
 
     def _document_tuples(self, documents):
@@ -244,8 +251,7 @@ class Browser:
         ]
 
         doc = self._selected_document
-        window = sg.Window('Edit Metadata', edit_metadata_layout, resizable=True, element_padding=1)
-        event, values = window.read(timeout=1)
+        window = sg.Window('Edit Metadata', edit_metadata_layout, resizable=True, element_padding=1).finalize()
         window[METADATA_DOC_AUTHORS].update(self.author_names(doc.authors))
         window[METADATA_DOC_DOI].update(doc.doi)
         window[METADATA_DOC_EXTERNAL_KEY].update(doc.external_key)
@@ -272,22 +278,54 @@ class Browser:
                 break
         window.close()
 
-    def _handle_reject(self, values, row_index):
-        if row_index < 0:
+    def _handle_filters(self):
+        filter_tags = [tag.name for tag in self._reject_reasons]
+        LIST_ADDITIONAL_TAGS = '-LIST-FILTER-TAGS-'
+        BUTTON_CANCEL = '-BUTTON-FILTER-CANCEL-'
+        BUTTON_CONFIRM = '-BUTTON-FILTER-CONFIRM-'
+        panel_layout = [
+            [
+                sg.Listbox(filter_tags, default_values=self._additional_tags, key=LIST_ADDITIONAL_TAGS,
+                           size=(94, 24), select_mode=LISTBOX_SELECT_MODE_MULTIPLE, enable_events=True,
+                           expand_x=True, expand_y=True),
+            ],
+            [
+                sg.Button('Cancel', key=BUTTON_CANCEL),
+                sg.Button('Confirm', key=BUTTON_CONFIRM)
+            ]
+        ]
+        filter_changed = False
+        window = sg.Window('Aditional Filters', panel_layout, resizable=True, element_padding=1, modal=True)
+        while True:
+            event, values = window.read()
+            if event == sg.WINDOW_CLOSED or event == BUTTON_CANCEL:
+                break
+            elif event == BUTTON_CONFIRM:
+                filter_changed = True
+                self._additional_tags = values[LIST_ADDITIONAL_TAGS]
+                break
+        window.close()
+        return filter_changed
+
+    def _handle_reject(self, selected_items, document_row_index):
+        if document_row_index < 0:
             return
-        reject_reason = values[LIST_DOC_REJECT][0]
-        if type(reject_reason) is str:
+        selected_tags = list(filter(lambda tag: tag.name in selected_items, self._reject_reasons))
+        if len(selected_tags) == 0:
             new_reason_text = sg.popup_get_text('Enter your new rejection reason:')
             if new_reason_text is not None:
                 self.reject_document(self._selected_document, new_reason_text)
                 self._update_reject_reasons()
-        elif type(reject_reason) is domain.Reason:
-            self.reject_document(self._selected_document, reject_reason)
+        else:
+            self.reject_document(self._selected_document, selected_tags)
         self._filter_documents()
-        self._update_table(row_index)
-        self._select_document_by_index(row_index)
+        self._update_table(document_row_index)
+        self._select_document_by_index(document_row_index)
 
     def _main_window(self):
+        doc_headings = ['Year', 'Title', 'Authors', 'Kind', 'Origin']
+        doc_widths = [4, 95, 45, 15, 15]
+
         main_layout = [
             [
                 sg.Column([
@@ -297,6 +335,11 @@ class Browser:
                         sg.Button('Rejected ON', key=BUTTON_TAG_REJECTED, button_color=reject_color),
                         sg.Button('Pre-selected ON', key=BUTTON_TAG_PRE_SELECTED, button_color=preselect_color),
                         sg.Button('Selected ON', key=BUTTON_TAG_SELECTED, button_color=select_color),
+                    ]
+                ], element_justification='left', expand_x=True),
+                sg.Column([
+                    [
+                        sg.Button('Rejection filters...', key=BUTTON_TAG_FILTERS),
                     ]
                 ], element_justification='left', expand_x=True),
                 sg.Column([
@@ -311,6 +354,10 @@ class Browser:
                          alternating_row_color=table_background_color,
                          auto_size_columns=False, col_widths=doc_widths, justification='left',
                          visible_column_map=[h[0] != '~' for h in doc_headings], num_rows=20)
+            ],
+            [
+                sg.Text(text='', key=FIELD_TAGS, size=(200, 1), font=text_font, text_color=text_color,
+                        background_color=input_color, expand_x=True),
             ],
             [
                 sg.Column([
@@ -345,11 +392,6 @@ class Browser:
                         sg.Text('External key:', font=label_font),
                         sg.Text(text='', key=FIELD_EXTERNAL_KEY, size=(20, 1), font=text_font, text_color=text_color,
                                 background_color=input_color),
-                    ],
-                    [
-                        sg.Text('Rejection reason:', font=label_font),
-                        sg.Text(text='', key=FIELD_REASON, size=(114, 1), font=text_font, text_color=text_color,
-                                background_color=input_color, expand_x=True),
                     ],
                     [
                         sg.Column([
@@ -390,7 +432,6 @@ class Browser:
         window = sg.Window('BiblioAlly', main_layout, resizable=True, element_padding=1)
         return window
 
-
     def _filter_documents(self):
         self._visible_documents = [document for document in self._all_documents
                                    if self._document_is_in_filter(document, self._active_tags)]
@@ -428,7 +469,7 @@ class Browser:
             self._window[FIELD_KIND].update('')
             self._window[FIELD_METADATA].update('')
             self._window[FIELD_ORIGIN].update('')
-            self._window[FIELD_REASON].update('')
+            self._window[FIELD_TAGS].update('')
             self._window[FIELD_TITLE].update('')
             self._window[FIELD_YEAR].update('')
             self._window[BUTTON_DOC_PRESELECT].update(disabled=True)
@@ -447,10 +488,7 @@ class Browser:
         self._window[FIELD_METADATA].update(document.review_metadata.content
                                           if document.review_metadata is not None else '')
         self._window[FIELD_ORIGIN].update(document.generator)
-        if document.reason is not None:
-            self._window[FIELD_REASON].update(document.reason.description)
-        else:
-            self._window[FIELD_REASON].update('')
+        self._window[FIELD_TAGS].update(' '.join([f'[{document_tag.tag.name}]' for document_tag in document.tags]))
         self._window[FIELD_TITLE].update(document.title)
         self._window[FIELD_YEAR].update(document.year)
         self._window[BUTTON_DOC_PRESELECT].update(disabled=document.is_tagged(domain.TAG_PRE_ACCEPTED))
@@ -464,9 +502,10 @@ class Browser:
         self._window[BUTTON_EDIT_DOC_METADATA].update(visible=element_visible)
 
     def _update_reject_reasons(self):
-        self._reject_reasons = self._catalog.reasons_by()
-        self._reject_reasons.sort(key=lambda item: item.description)
-        self._window[LIST_DOC_REJECT].update(values=['Click me to add NEW reason...'] + self._reject_reasons)
+        self._reject_reasons = self._catalog.tags_by(system_tag=False)
+        self._reject_reasons.sort(key=lambda tag: tag.name)
+        tag_names = [tag.name for tag in self._reject_reasons]
+        self._window[LIST_DOC_REJECT].update(values=['Click me to add NEW reason...'] + tag_names)
 
     def _update_table(self, select_row=None):
         if select_row is not None:
