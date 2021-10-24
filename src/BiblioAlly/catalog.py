@@ -8,11 +8,30 @@ from sqlalchemy.sql.expression import select
 
 class Catalog:
     """
-    Handles the BiblioAlly database.
+    The Catalog class represents a BiblioAlly database, which is a SQLite file that holds all documents and
+    additional data regarding a literature review.
+
+    When a Catalog is opened for the first time, the corresponding SQLite database file is created and setup.
+
+    Methods are provided to import and exports BibTeX files from and to various sources and targets. Currently,
+    recognizes BibTex dialects are from ACM Digital Library, IEEE Xplore, Scopus and Web of Science.
+
+    Each BibTeX dialect is identified by a registered string name and handled by a particular translator class.
+    Another dialect can be added just providing and registering a new translator for it, since BiblioAlly has
+    an extensible architecture.
     """
     translators = dict()
 
     def __init__(self, catalog_path=None, echo=False, future=True):
+        """
+        Initializes a newly created instance and set it up for operation.
+
+        Parameters:
+            catalog_path: the path and file name of the catalog file;
+            echo: with True all the SQL operations issued against SQLite will be echoed to the console; it is
+            useful for debug operations; default is False;
+            future: just passed to the SQLite engine.
+        """
         self._engine = None
         self._session = None
         if catalog_path is not None:
@@ -30,7 +49,7 @@ class Catalog:
             domain.DocumentMetadata: The same instance passed.
 
         Example:
-            the_reasons = catalog.reasons_by(description='No access')
+            catalog.add_summary(a_summary)
         """
         self._session.add(summary)
         return summary
@@ -530,14 +549,14 @@ all_document_fields = [
 
 def as_dict(documents, fields=None, **kwargs):
     """
-    Translates a list of documents as a dictionary.
+    Translates a list of documents into a dictionary.
 
     Parameters:
-        documents :
+        documents:
             the of documents to be operated;
-        fields :
+        fields:
             the list of fields that will be translated; if None is passed, all fields will be translated;
-        **kwargs :
+        **kwargs:
             fields that will be pre-processed before being translated; pre-processors are functions or lambdas
             that will receive the field value and return some operated version of it.
 
@@ -570,14 +589,14 @@ def as_dict(documents, fields=None, **kwargs):
 
 def as_tuple(documents, fields=None, **kwargs):
     """
-    Translates a list of documents as list of tuples.
+    Translates a list of documents into a list of tuples.
 
     Parameters:
-        documents :
+        documents:
             the of documents to be operated;
-        fields :
+        fields:
             the list of fields that will be translated; if None is passed, all fields will be translated;
-        **kwargs :
+        **kwargs:
             fields that will be pre-processed before being translated; pre-processors are functions or lambdas
             that will receive the field value and return some operated version of it.
 
