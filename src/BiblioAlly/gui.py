@@ -67,7 +67,7 @@ metadata_font = ('Courier New', 8, '')
 metadata_font_edit = ('Courier New', 9, '')
 label_font = ('Arial', 10, '')
 text_font = ('Arial', 10, 'bold')
-text_color = 'orange'
+text_color = '#CA8410'
 button_base_font = 'Arial 10'
 
 duplicate_color = ('#ECFFFF', '#FAB420')
@@ -75,14 +75,14 @@ reject_color = ('#ECFFFF', '#E94763')
 import_color = ('#ECFFFF', '#737A97')
 preselect_color = ('#ECFFFF', '#37A4F6')
 select_color = ('#ECFFFF', '#03A399')
-input_color = '#36394C'
+input_color = '#DFDFDF'
 
 # Add your new theme colors and settings
 sg.LOOK_AND_FEEL_TABLE['BiblioAllyTheme'] = {
-    'BACKGROUND': '#212735',
+    'BACKGROUND': '#D8D8DF',
     'TEXT': '#737A97',
     'INPUT': input_color,
-    'TEXT_INPUT': '#737A97',
+    'TEXT_INPUT': '#636A87',
     'SCROLL': '#737A97',
     'BUTTON': ('#F0F0F0', '#626ED4'),
     'PROGRESS': ('#D1826B', '#CC8019'),
@@ -91,8 +91,8 @@ sg.LOOK_AND_FEEL_TABLE['BiblioAllyTheme'] = {
     'PROGRESS_DEPTH': 0,
 }
 sg.theme('BiblioAllyTheme')
-table_alternate_color = '#36394C'
-table_background_color = '#333A47'
+table_alternate_color = '#626ED4'
+table_background_color = input_color
 
 
 class Browser:
