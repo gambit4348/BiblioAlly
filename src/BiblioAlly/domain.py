@@ -143,6 +143,7 @@ class Document(Base):
     keywords = relationship('Keyword', secondary=Document_Keyword)
     tags = relationship('DocumentTag', cascade='all, delete-orphan', back_populates='document')
     references = relationship('Reference', cascade='all, delete', back_populates='document')
+    duplicates = relationship('Document', back_populates='original_document')
     original_document_id = Column(Integer, ForeignKey('Document.id'))
     original_document = relationship('Document', uselist=False)
     review_metadata = relationship('DocumentMetadata', uselist=False, back_populates='document',
