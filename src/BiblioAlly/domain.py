@@ -121,6 +121,7 @@ class Document(Base):
     __tablename__ = 'Document'
     id = Column(Integer, primary_key=True)
     title = Column(String(255, collation='NOCASE'), nullable=False)
+    title_crc32 = Column(Integer, nullable=False, index=True)
     abstract = Column(String, nullable=False)
     external_key = Column(String(128), nullable=False, index=True)
     year = Column(Integer, nullable=False)
@@ -143,7 +144,7 @@ class Document(Base):
     tags = relationship('DocumentTag', cascade='all, delete-orphan', back_populates='document')
     references = relationship('Reference', cascade='all, delete', back_populates='document')
     original_document_id = Column(Integer, ForeignKey('Document.id'))
-    original_document = relationship('Document')
+    original_document = relationship('Document', uselist=False)
     review_metadata = relationship('DocumentMetadata', uselist=False, back_populates='document',
                                    cascade="all, delete-orphan")
 

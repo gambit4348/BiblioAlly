@@ -1,7 +1,7 @@
 from . import domain, basetranslator as bt
 import re
 from typing import Dict
-
+from .utility import alphanum_crc32
 
 key_names = [
     'Accuvision',
@@ -371,6 +371,7 @@ class Translator(bt.BaseTranslator):
         documents = []
         for proto_document in proto_documents:
             document = self._document_from_proto_document(proto_document)
+            document.title_crc32 = alphanum_crc32(document.title)
             documents.append(document)
         return documents
 

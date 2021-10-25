@@ -73,12 +73,10 @@ class TestCatalog(TestCase):
         ally = ba.Catalog(self.catalog_path)
 
         # Act
-        load_count, file_count, base_count = ally.import_from_file('INVALID', bibtex_path + 'invalid.bib')
+        added_count, file_count, base_count = ally.import_from_file('INVALID', bibtex_path + 'invalid.bib')
 
         # Assert
-        self.assertEqual(load_count, 0, 'Unexpected load count')
-        self.assertEqual(file_count, load_count, 'Unexpected file count')
-        self.assertEqual(base_count, base_count, 'Unexpected base count')
+        self.assertEqual(file_count, 0, 'Unexpected load count')
 
     @unittest.skip("skipping ACM DL")
     def test_import_refs_from_acm_dl(self):
@@ -86,12 +84,10 @@ class TestCatalog(TestCase):
         ally = ba.Catalog(self.catalog_path)
 
         # Act
-        load_count, file_count, base_count = ally.import_from_file(acm.AcmDL, bibtex_path + 'acm_dl.bib')
+        added_count, file_count, base_count = ally.import_from_file(acm.AcmDL, bibtex_path + 'acm_dl.bib')
 
         # Assert
-        self.assertEqual(202, load_count, 'Unexpected load count')
-        self.assertEqual(load_count, file_count, 'Unexpected file count')
-        self.assertEqual(load_count, base_count, 'Unexpected base count')
+        self.assertEqual(202, file_count, 'Unexpected load count')
 
     @unittest.skip("skipping IEEEXplore")
     def test_import_refs_from_ieee_xplore(self):
@@ -99,12 +95,10 @@ class TestCatalog(TestCase):
         ally = ba.Catalog(self.catalog_path)
 
         # Act
-        load_count, file_count, base_count = ally.import_from_file(ieee.IeeeXplore, bibtex_path + 'ieeexplore.bib')
+        added_count, file_count, base_count = ally.import_from_file(ieee.IeeeXplore, bibtex_path + 'ieeexplore.bib')
 
         # Assert
-        self.assertEqual(172, load_count, 'Unexpected load count')
-        self.assertEqual(load_count, file_count, 'Unexpected file count')
-        self.assertEqual(load_count, base_count, 'Unexpected base count')
+        self.assertEqual(172, file_count, 'Unexpected load count')
 
     @unittest.skip("skipping Scopus")
     def test_import_refs_from_scopus(self):
@@ -112,12 +106,10 @@ class TestCatalog(TestCase):
         ally = ba.Catalog(self.catalog_path)
 
         # Act
-        load_count, file_count, base_count = ally.import_from_file(scopus.Scopus, bibtex_path + 'scopus.bib')
+        added_count, file_count, base_count = ally.import_from_file(scopus.Scopus, bibtex_path + 'scopus.bib')
 
         # Assert
-        self.assertEqual(125, load_count, 'Unexpected load count')
-        self.assertEqual(load_count, file_count, 'Unexpected file count')
-        self.assertEqual(load_count, base_count, 'Unexpected base count')
+        self.assertEqual(125, file_count, 'Unexpected load count')
 
     @unittest.skip("skipping Web of Science")
     def test_import_refs_from_web_of_science(self):
@@ -125,12 +117,10 @@ class TestCatalog(TestCase):
         ally = ba.Catalog(self.catalog_path)
 
         # Act
-        load_count, file_count, base_count = ally.import_from_file(wos.WebOfScience, bibtex_path + 'web_of_science.bib')
+        added_count, file_count, base_count = ally.import_from_file(wos.WebOfScience, bibtex_path + 'web_of_science.bib')
 
         # Assert
-        self.assertEqual(548, load_count, 'Unexpected load count')
-        self.assertEqual(load_count, file_count, 'Unexpected file count')
-        self.assertEqual(load_count, base_count, 'Unexpected base count')
+        self.assertEqual(548, file_count, 'Unexpected load count')
 
     def test_retrieve_document_by_id(self):
         # Arrange

@@ -3,6 +3,7 @@ Declares and exports the main class of BiblioAlly, the Catalog class and some ut
 """
 import datetime
 from . import domain
+from .utility import alphanum_crc32
 from functools import reduce
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, aliased
@@ -300,8 +301,8 @@ class Catalog:
             session = self._session
             for loaded_document in loaded_documents:
                 original_document = session.execute(select(domain.Document).
-                                                    filter_by(title=loaded_document.title,
-                                                              original_document=None)).scalars().first()
+                                                    filter_by(title_crc32=loaded_document.title_crc32))\
+                    .scalars().first()
                 if original_document is not None and original_document.generator == loaded_document.generator:
                     continue
                 loaded_document.import_date = datetime.date.today()
