@@ -1,8 +1,10 @@
-import datetime
+"""
+Declares and exports the Browser class that is a GUI based support tool for operating on a BiblioAlly Catalog.
+"""
 
+import datetime
 import PySimpleGUI as sg
 from PySimpleGUI import LISTBOX_SELECT_MODE_MULTIPLE
-
 from . import catalog as cat
 from . import domain
 
@@ -99,6 +101,7 @@ class Browser:
 
     To invoke the browser just call the method show().
     """
+
     def __init__(self, catalog: cat.Catalog):
         """
         Initializes the instance with the catalog that will be handled.
@@ -106,6 +109,7 @@ class Browser:
         Parameters:
              catalog: the BiblioAlly catalog that will be handled.
         """
+
         self._catalog = catalog
         self._doc_fields = ['year', 'title', 'authors', 'kind', 'generator', 'tags']
         self._reject_reasons = []
@@ -123,14 +127,15 @@ class Browser:
         Sets up the catalog Browser and shows it.
 
         Example:
-            from BiblioAlly import catalog as cat
+            from BiblioAlly import catalog as ally
             from BiblioAlly import gui
 
-            catalog = cat.Catalog("my_reserach.db")
+            catalog = ally.Catalog("my_research.db")
             browser = gui.Browser(catalog)
 
             browser.show()
         """
+
         self._load_documents()
         self._filter_documents()
 

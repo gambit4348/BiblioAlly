@@ -1,3 +1,10 @@
+"""
+Declares and exports the domain objects that describe each entities existing in the BiblioAlly Catalog.
+
+The domain classes declared in this module carry annotations specific to be worked by SQL Alchemy, the
+ORM engine used to persist and retrieve the objects during a session of BiblioAlly.
+"""
+
 import datetime
 from sqlalchemy import Table, ForeignKey, Column, Integer, String, Date, Boolean, Text
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -20,6 +27,17 @@ Document_Keyword = Table('Document_R_Keyword', Base.metadata,
 
 
 class DocumentAuthor(Base):
+    """
+    Describes the relationship between a Document and an Author.
+
+    Since a Document my have more than one Author and a given Author may be referenced by more than one Document,
+    this class registers the relationship between those two classes.
+
+    Going beyond than simply registering the relationship, instances of this class also identify which Author is the
+    first one (also named "the corresponding author") and what was the Author's affiliation at the time the
+    Document was published.
+    """
+
     __tablename__ = 'Document_R_Author'
     document_id = Column(ForeignKey('Document.id'), primary_key=True)
     document = relationship('Document')
@@ -35,6 +53,10 @@ class DocumentAuthor(Base):
 
 
 class DocumentTag(Base):
+    """
+    Describes the relationship between a Document and a Tag.
+    """
+
     __tablename__ = 'Document_R_Tag'
     document_id = Column(ForeignKey('Document.id'), primary_key=True)
     document = relationship('Document')
@@ -46,6 +68,10 @@ class DocumentTag(Base):
 
 
 class Author(Base):
+    """
+    The author of a given Document.
+    """
+
     __tablename__ = 'Author'
     id = Column(Integer, primary_key=True)
     short_name = Column(String(30), nullable=False, index=True)
@@ -78,6 +104,20 @@ class Author(Base):
 
 
 class Document(Base):
+    """
+    The bibliographic reference to a document that reports the results of a research.
+
+    A instance of Document represents a bibliographic reference, like a BibTeX entry, with a number of attributes
+    that describe the published research document.
+
+    A Document can have:
+        -one or more Authors, one of them marked as the first author;
+        -zero or more Keywords that hint about the themes discussed in the document;
+        -zero or more References to other scientific documents used to fundament the research;
+        -one or more Tags that somehow register some particular condition fo interest;
+        -zero or one DocumentMetadata that record the important data extracted from the document full text.
+    """
+
     __tablename__ = 'Document'
     id = Column(Integer, primary_key=True)
     title = Column(String(255, collation='NOCASE'), nullable=False)
@@ -166,12 +206,15 @@ class Document(Base):
             return self.authors[0].author
         return None
 
-
     def __repr__(self):
         return f'Document(id={self.id!r}, title={self.title!r}, year={self.year!r}, doi={self.doi!r})'
 
 
 class DocumentMetadata(Base):
+    """
+    Describes the relationship between a Document and a DocumentMetadata.
+    """
+
     __tablename__ = 'Document_Metadata'
     id = Column(Integer, primary_key=True)
     content = Column(Text, nullable=False)
@@ -190,6 +233,10 @@ class DocumentMetadata(Base):
 
 
 class Institution(Base):
+    """
+    Describes an institution to which an Author may be affiliated.
+    """
+
     __tablename__ = 'Institution'
     id = Column(Integer, primary_key=True)
     name = Column(String(128), nullable=False)
@@ -201,6 +248,10 @@ class Institution(Base):
 
 
 class Keyword(Base):
+    """
+    Describes a Keyword that hints about a theme discussed by a Document.
+    """
+
     __tablename__ = 'Keyword'
     id = Column(Integer, primary_key=True)
     name = Column(String(30), nullable=False, unique=True, index=True)
@@ -211,6 +262,10 @@ class Keyword(Base):
 
 
 class Reference(Base):
+    """
+    Describes a bibliographic reference listed by a given Document.
+    """
+
     __tablename__ = 'Reference'
     id = Column(Integer, primary_key=True)
     description = Column(String, nullable=False)
@@ -222,6 +277,17 @@ class Reference(Base):
 
 
 class Tag(Base):
+    """
+    Describes a Tag that identifies some particular condition of a given Document.
+
+    Some Tags are created when the Catalog is first opened:
+        -accepted: informs that a Document is selected for the literature review after the deep screening;
+        -duplicate: informs that a Document is a duplicate of other;
+        -excluded: informs that a Document is rejected for the literature review;
+        -imported: informs that a Document is just imported into the Catalog;
+        -pre-accepted: informs that a Document is pre-selected for the literature review after the shallow screening;
+    """
+
     __tablename__ = 'Tag'
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False, unique=True, index=True)

@@ -1,3 +1,6 @@
+"""
+Declares and exports the main class of BiblioAlly, the Catalog class and some utility functions.
+"""
 import datetime
 from . import domain
 from functools import reduce
@@ -8,18 +11,40 @@ from sqlalchemy.sql.expression import select
 
 class Catalog:
     """
+    Represents a BiblioAlly database.
+
     The Catalog class represents a BiblioAlly database, which is a SQLite file that holds all documents and
     additional data regarding a literature review.
 
     When a Catalog is opened for the first time, the corresponding SQLite database file is created and setup.
 
-    Methods are provided to import and exports BibTeX files from and to various sources and targets. Currently,
-    recognizes BibTex dialects are from ACM Digital Library, IEEE Xplore, Scopus and Web of Science.
+    Methods are provided to import and export BibTeX files (currently the only reference format supported) from and to
+    various sources and targets (we call those BibTeX "dialects", since some naming conventions make them
+    incompatible with each other). Currently, recognized BibTeX dialects are from ACM Digital Library, IEEE Xplore,
+    Scopus and Web of Science.
 
-    Each BibTeX dialect is identified by a registered string name and handled by a particular translator class.
+    Each BibTeX dialect is identified by a registered string name and handled by a particular translator class. A
+    Translator class is an artifact that knows the particularities of a certain dialect in order to read from and
+    write to correctly.
+
     Another dialect can be added just providing and registering a new translator for it, since BiblioAlly has
-    an extensible architecture.
+    an extensible architecture for that matter.
+
+    A Catalog holds a number of objects that are all related to each other to describe the literature review
+    database (declared in module "domain"):
+        -Document: The bibliographic reference to a document that reports the results of a research;
+        -Author: The author of a given Document;
+        -Institution: The institution to which an author were affiliated when a research was published;
+        -Keyword: A keyword related to a given Document;
+        -Reference: A bibliography item listed for a given Document;
+        -DocumentMetadata: Metadata describing important information about a given Document;
+        -Tag: a tag related to a given Document.
+
+    Attributes:
+        _engine: SqlAlchemy engine for SQLite;
+        _session: SqlAlchemy session for database operations.
     """
+
     translators = dict()
 
     def __init__(self, catalog_path=None, echo=False, future=True):
@@ -32,6 +57,7 @@ class Catalog:
             useful for debug operations; default is False;
             future: just passed to the SQLite engine.
         """
+
         self._engine = None
         self._session = None
         if catalog_path is not None:
@@ -51,6 +77,7 @@ class Catalog:
         Example:
             catalog.add_summary(a_summary)
         """
+
         self._session.add(summary)
         return summary
 
@@ -72,6 +99,7 @@ class Catalog:
         Example:
             catalog.author_by(short_name='Einstein, A.')
         """
+
         return self._session.execute(select(domain.Author).filter_by(**kwargs)).scalars().first()
 
     def authors_by(self, **kwargs):
@@ -293,7 +321,7 @@ class Catalog:
 
     def export_to_file(self, target: str, filename: str, should_export=None):
         """
-        Imports references from a file.
+        Exports references to a file.
 
         Parameters:
             target :
@@ -410,7 +438,7 @@ class Catalog:
     @property
     def is_open(self):
         """
-        Indicates if the catalog is open or not.
+        Informs if the catalog is open or not.
 
         Returns:
             True if the catalog is open, False otherwise.
@@ -570,6 +598,7 @@ def as_dict(documents, fields=None, **kwargs):
                                           reason=lambda reason: reason.description if reason is not None else None,
                                           tags=lambda tags: [t.tag.name for t in tags])
     """
+
     if type(documents) is not list:
         documents = [documents]
     if fields is None:
@@ -608,6 +637,7 @@ def as_tuple(documents, fields=None, **kwargs):
                                            reason=lambda reason: reason.description if reason is not None else None,
                                            tags=lambda tags: [t.tag.name for t in tags])
     """
+
     if type(documents) is not list:
         documents = [documents]
     if fields is None:
