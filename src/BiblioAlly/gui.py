@@ -45,11 +45,11 @@ FIELD_TITLE = '-DOC-TITLE-'
 FIELD_YEAR = '-DOC-YEAR-'
 
 tag_for_button = {
-    BUTTON_TAG_SELECTED: domain.TAG_ACCEPTED,
+    BUTTON_TAG_SELECTED: domain.TAG_SELECTED,
     BUTTON_TAG_DUPLICATE: domain.TAG_DUPLICATE,
-    BUTTON_TAG_REJECTED: domain.TAG_EXCLUDED,
+    BUTTON_TAG_REJECTED: domain.TAG_REJECTED,
     BUTTON_TAG_IMPORTED: domain.TAG_IMPORTED,
-    BUTTON_TAG_PRE_SELECTED: domain.TAG_PRE_ACCEPTED
+    BUTTON_TAG_PRE_SELECTED: domain.TAG_PRE_SELECTED
 }
 label_for_button = {
     BUTTON_TAG_SELECTED: 'Selected',
@@ -121,7 +121,7 @@ class Browser:
         self._all_documents = []
         self._visible_documents = []
         self._active_tags = [
-            domain.TAG_ACCEPTED, domain.TAG_DUPLICATE, domain.TAG_EXCLUDED, domain.TAG_IMPORTED, domain.TAG_PRE_ACCEPTED
+            domain.TAG_SELECTED, domain.TAG_DUPLICATE, domain.TAG_REJECTED, domain.TAG_IMPORTED, domain.TAG_PRE_SELECTED
         ]
         self._additional_tags = []
         self._selected_document = None
@@ -214,7 +214,7 @@ class Browser:
         return '; '.join([kw.name for kw in keywords])
 
     def pre_select_document(self, document: domain.Document):
-        self._catalog.tag(document, domain.TAG_PRE_ACCEPTED)
+        self._catalog.tag(document, domain.TAG_PRE_SELECTED)
         self._catalog.untag(document, domain.TAG_IMPORTED)
         document.reason = None
         self._catalog.commit()
@@ -223,13 +223,13 @@ class Browser:
         if type(reason_tags) is not list:
             reason_tags = [reason_tags]
         document.untag(domain.TAG_IMPORTED)
-        self._catalog.tag(document, [domain.TAG_EXCLUDED] + reason_tags)
+        self._catalog.tag(document, [domain.TAG_REJECTED] + reason_tags)
         self._catalog.commit()
         return [document_tag.tag for document_tag in document.tags]
 
     def select_document(self, document: domain.Document):
-        self._catalog.tag(document, domain.TAG_ACCEPTED)
-        self._catalog.untag(document, domain.TAG_PRE_ACCEPTED)
+        self._catalog.tag(document, domain.TAG_SELECTED)
+        self._catalog.untag(document, domain.TAG_PRE_SELECTED)
         document.reason = None
         self._catalog.commit()
 
@@ -536,12 +536,12 @@ class Browser:
         self._window[FIELD_TAGS].update(' '.join([f'[{document_tag.tag.name}]' for document_tag in document.tags]))
         self._window[FIELD_TITLE].update(document.title)
         self._window[FIELD_YEAR].update(document.year)
-        self._window[BUTTON_DOC_PRESELECT].update(disabled=document.is_tagged(domain.TAG_PRE_ACCEPTED))
-        self._window[BUTTON_DOC_SELECT].update(disabled=not document.is_tagged(domain.TAG_PRE_ACCEPTED))
-        element_visible = document.is_tagged(domain.TAG_IMPORTED) or document.is_tagged(domain.TAG_PRE_ACCEPTED)
+        self._window[BUTTON_DOC_PRESELECT].update(disabled=document.is_tagged(domain.TAG_PRE_SELECTED))
+        self._window[BUTTON_DOC_SELECT].update(disabled=not document.is_tagged(domain.TAG_PRE_SELECTED))
+        element_visible = document.is_tagged(domain.TAG_IMPORTED) or document.is_tagged(domain.TAG_PRE_SELECTED)
         self._window[LABEL_DOC_REJECT].update(visible=element_visible)
         self._window[LIST_DOC_REJECT].update(visible=element_visible)
-        element_visible = document.is_tagged(domain.TAG_ACCEPTED)
+        element_visible = document.is_tagged(domain.TAG_SELECTED)
         self._window[LABEL_DOC_METADATA].update(visible=element_visible)
         self._window[FIELD_METADATA].update(visible=element_visible)
         self._window[BUTTON_EDIT_DOC_METADATA].update(visible=element_visible)
@@ -554,7 +554,7 @@ class Browser:
                     doc_tags[tag] += 1 if tag in [dt.tag for dt in doc.tags] else 0
                 else:
                     doc_tags[tag] = 1
-        sort_order = [domain.TAG_PRE_ACCEPTED, domain.TAG_DUPLICATE, domain.TAG_ACCEPTED, domain.TAG_EXCLUDED,
+        sort_order = [domain.TAG_PRE_SELECTED, domain.TAG_DUPLICATE, domain.TAG_SELECTED, domain.TAG_REJECTED,
                       domain.TAG_IMPORTED]
         colors = [preselect_color[1], duplicate_color[1], select_color[1], reject_color[1], import_color[1]]
         doc_tags = sorted(list(doc_tags.items()), key=lambda dt: sort_order.index(dt[0].name))

@@ -10,11 +10,11 @@ from sqlalchemy import Table, ForeignKey, Column, Integer, String, Date, Boolean
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import registry, relationship
 
-TAG_ACCEPTED = 'accepted'
-TAG_DUPLICATE = 'duplicate'
-TAG_EXCLUDED = 'excluded'
-TAG_IMPORTED = 'imported'
-TAG_PRE_ACCEPTED = 'pre-accepted'
+TAG_SELECTED = 'Selected'
+TAG_DUPLICATE = 'Duplicate'
+TAG_REJECTED = 'Rejected'
+TAG_IMPORTED = 'Imported'
+TAG_PRE_SELECTED = 'Pre-selected'
 
 biblioally_mapper = registry()
 Base = biblioally_mapper.generate_base()
@@ -145,7 +145,7 @@ class Document(Base):
     references = relationship('Reference', cascade='all, delete', back_populates='document')
     duplicates = relationship('Document', back_populates='original_document')
     original_document_id = Column(Integer, ForeignKey('Document.id'))
-    original_document = relationship('Document', uselist=False)
+    original_document = relationship('Document', uselist=False, post_update=True)
     review_metadata = relationship('DocumentMetadata', uselist=False, back_populates='document',
                                    cascade="all, delete-orphan")
 

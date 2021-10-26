@@ -63,8 +63,8 @@ class Catalog:
         self._session = None
         self._system_tags = []
         self._system_tag_names = [
-                    domain.TAG_ACCEPTED, domain.TAG_DUPLICATE, domain.TAG_EXCLUDED, domain.TAG_IMPORTED,
-                    domain.TAG_PRE_ACCEPTED
+                    domain.TAG_SELECTED, domain.TAG_DUPLICATE, domain.TAG_REJECTED, domain.TAG_IMPORTED,
+                    domain.TAG_PRE_SELECTED
                 ]
         if catalog_path is not None:
             self.open(catalog_path, echo, future)
@@ -322,12 +322,12 @@ class Catalog:
                 self._update_authors(loaded_document, author_names)
                 self._update_institutions(loaded_document, institution_names)
                 self._update_keywords(loaded_document)
-                self._tag(loaded_document, domain.TAG_IMPORTED)
                 added_count += 1
                 if existing_document is not None:
                     self._tag(loaded_document, domain.TAG_DUPLICATE)
-                    existing_document.duplicates.add(loaded_document)
+                    existing_document.duplicates.append(loaded_document)
                 else:
+                    self._tag(loaded_document, domain.TAG_IMPORTED)
                     session.add(loaded_document)
         finally:
             self._session.commit()
@@ -415,9 +415,9 @@ class Catalog:
         if len(self._system_tags) == 0:
             self._system_tags.append(self._tag_by_name(domain.TAG_IMPORTED, auto_create=True))
             self._system_tags.append(self._tag_by_name(domain.TAG_DUPLICATE, auto_create=True))
-            self._system_tags.append(self._tag_by_name(domain.TAG_EXCLUDED, auto_create=True))
-            self._system_tags.append(self._tag_by_name(domain.TAG_PRE_ACCEPTED, auto_create=True))
-            self._system_tags.append(self._tag_by_name(domain.TAG_ACCEPTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(domain.TAG_REJECTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(domain.TAG_PRE_SELECTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(domain.TAG_SELECTED, auto_create=True))
             self._session.commit()
 
     def tag(self, document: domain.Document, tags):
