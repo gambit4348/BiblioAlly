@@ -30,7 +30,7 @@ class TestCatalog(TestCase):
 
         # Act
         export_count = ally.export_to_file(acm.AcmDL, bibtex_path + 'exported_acm_dl.bib',
-                                           should_export=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
+                                           should_export=lambda d: d.is_tagged(domain.TAG_SELECTED))
 
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
@@ -41,7 +41,7 @@ class TestCatalog(TestCase):
 
         # Act
         export_count = ally.export_to_file(ieee.IeeeXplore, bibtex_path + 'exported_ieee_xplore.bib',
-                                           should_export=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
+                                           should_export=lambda d: d.is_tagged(domain.TAG_SELECTED))
 
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
@@ -52,7 +52,7 @@ class TestCatalog(TestCase):
 
         # Act
         export_count = ally.export_to_file(scopus.Scopus, bibtex_path + 'exported_scopus.bib',
-                                           should_export=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
+                                           should_export=lambda d: d.is_tagged(domain.TAG_SELECTED))
 
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
@@ -63,7 +63,7 @@ class TestCatalog(TestCase):
 
         # Act
         export_count = ally.export_to_file(wos.WebOfScience, bibtex_path + 'exported_web_of_science.bib',
-                                           should_export=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
+                                           should_export=lambda d: d.is_tagged(domain.TAG_SELECTED))
 
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
@@ -120,7 +120,7 @@ class TestCatalog(TestCase):
         added_count, file_count, base_count = ally.import_from_file(wos.WebOfScience, bibtex_path + 'web_of_science.bib')
 
         # Assert
-        self.assertEqual(548, file_count, 'Unexpected load count')
+        self.assertEqual(51, file_count, 'Unexpected load count')
 
     def test_retrieve_document_by_id(self):
         # Arrange
@@ -137,7 +137,7 @@ class TestCatalog(TestCase):
     def test_retrieve_document_not_tagged(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
-        tag = domain.TAG_PRE_ACCEPTED
+        tag = domain.TAG_PRE_SELECTED
         untag = domain.TAG_IMPORTED
         tagged_document_id = 121
         document = ally.document_by(id=tagged_document_id)
@@ -165,7 +165,7 @@ class TestCatalog(TestCase):
     def test_retrieve_document_tagged(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
-        tag = domain.TAG_PRE_ACCEPTED
+        tag = domain.TAG_PRE_SELECTED
         tagged_document_id = 121
         document = ally.document_by(id=tagged_document_id)
         if not document.is_tagged(tag):
@@ -185,7 +185,7 @@ class TestCatalog(TestCase):
     def test_retrieve_document_tagged_not_tagged(self):
         # Arrange
         ally = ba.Catalog(self.catalog_path)
-        tag = domain.TAG_PRE_ACCEPTED
+        tag = domain.TAG_PRE_SELECTED
         untag = domain.TAG_IMPORTED
         tagged_document_id = 121
         document = ally.document_by(id=tagged_document_id)
