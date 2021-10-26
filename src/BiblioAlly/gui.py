@@ -81,15 +81,16 @@ select_color = ('#ECFFFF', '#03A399')
 input_color = '#DFDFDF'
 
 background_color = '#D8D8DF'
+text_color = '#434A67'
 
 # Add your new theme colors and settings
 sg.LOOK_AND_FEEL_TABLE['BiblioAllyTheme'] = {
     'BACKGROUND': background_color,
-    'TEXT': '#737A97',
+    'TEXT': text_color,
     'INPUT': input_color,
-    'TEXT_INPUT': '#636A87',
+    'TEXT_INPUT': text_color,
     'SCROLL': '#737A97',
-    'BUTTON': ('#F0F0F0', '#626ED4'),
+    'BUTTON': (text_color, '#C2CEFF'),
     'PROGRESS': ('#D1826B', '#CC8019'),
     'BORDER': 1,
     'SLIDER_DEPTH': 0,
@@ -561,10 +562,15 @@ class Browser:
         labels = [t[0].name for t in doc_tags]
         sizes = [t[1] for t in doc_tags]
 
+        total_count = sum(sizes)
         self._ax.clear()
         self._ax.pie(sizes, labels=labels, colors=colors, wedgeprops=dict(width=0.5), startangle=-40,
-                     autopct=lambda p: f'{p:.2f}%\n({p*sum(sizes)/100 :.0f})',
+                     autopct=lambda p: f'{p:.2f}%\n({p*total_count/100 :.0f})',
                      pctdistance=0.85)
+        done_count = total_count - sizes[sort_order.index(domain.TAG_IMPORTED)]
+        done_perc = done_count*100/total_count
+        self._ax.text(0, 0.1, f'{done_perc:.2f}%', ha='center', va='center', fontsize=32)
+        self._ax.text(0, -0.1, f'{done_count} / {total_count}', ha='center', va='center', fontsize=18)
         canvas = self._window[CANVAS_DOCUMENTS].TKCanvas
         if self._figure_canvas is None:
             self._figure_canvas = FigureCanvasTkAgg(self._fig, canvas)
