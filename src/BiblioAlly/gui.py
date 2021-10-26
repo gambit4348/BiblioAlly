@@ -558,7 +558,7 @@ class Browser:
                       domain.TAG_IMPORTED]
         colors = [preselect_color[1], duplicate_color[1], select_color[1], reject_color[1], import_color[1]]
         doc_tags = sorted(list(doc_tags.items()), key=lambda dt: sort_order.index(dt[0].name))
-        labels = [t[0].name.capitalize() for t in doc_tags]
+        labels = [t[0].name for t in doc_tags]
         sizes = [t[1] for t in doc_tags]
 
         self._ax.clear()
