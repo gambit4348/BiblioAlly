@@ -62,6 +62,10 @@ class Catalog:
         self._engine = None
         self._session = None
         self._system_tags = []
+        self._system_tag_names = [
+                    domain.TAG_ACCEPTED, domain.TAG_DUPLICATE, domain.TAG_EXCLUDED, domain.TAG_IMPORTED,
+                    domain.TAG_PRE_ACCEPTED
+                ]
         if catalog_path is not None:
             self.open(catalog_path, echo, future)
 
@@ -477,6 +481,17 @@ class Catalog:
 
         return self._system_tags
 
+    @property
+    def system_tag_names(self):
+        """
+        Returns a list with all system Tag names.
+
+        Returns:
+            A list containing all the system Tag names.
+        """
+
+        return self._system_tag_names
+
     def _add_keyword(self, document, keyword_name):
         if document.has_keyword(keyword_name):
             return document
@@ -549,10 +564,7 @@ class Catalog:
         if existing_tag is None:
             if auto_create:
                 existing_tag = domain.Tag(name=tag_name)
-                existing_tag.system_tag = tag_name in [
-                    domain.TAG_ACCEPTED, domain.TAG_DUPLICATE, domain.TAG_EXCLUDED, domain.TAG_IMPORTED,
-                    domain.TAG_PRE_ACCEPTED
-                ]
+                existing_tag.system_tag = tag_name in self._system_tag_names
                 self._session.add(existing_tag)
         return existing_tag
 
