@@ -8,7 +8,7 @@ ORM engine used to persist and retrieve the objects during a session of BiblioAl
 import datetime
 from sqlalchemy import Table, ForeignKey, Column, Integer, String, Date, Boolean, Text
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import registry, relationship
+from sqlalchemy.orm import registry, relationship, backref
 
 TAG_SELECTED = 'Selected'
 TAG_DUPLICATE = 'Duplicate'
@@ -143,9 +143,8 @@ class Document(Base):
     keywords = relationship('Keyword', secondary=Document_Keyword)
     tags = relationship('DocumentTag', cascade='all, delete-orphan', back_populates='document')
     references = relationship('Reference', cascade='all, delete', back_populates='document')
-    duplicates = relationship('Document', back_populates='original_document')
+    duplicates = relationship('Document', backref=backref('original_document', remote_side=[id]))
     original_document_id = Column(Integer, ForeignKey('Document.id'))
-    original_document = relationship('Document', uselist=False, post_update=True)
     review_metadata = relationship('DocumentMetadata', uselist=False, back_populates='document',
                                    cascade="all, delete-orphan")
 
