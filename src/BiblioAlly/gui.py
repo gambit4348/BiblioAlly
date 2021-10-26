@@ -130,7 +130,6 @@ class Browser:
         self._ax = None
         self._figure_canvas = None
 
-
     def show(self):
         """
         Sets up the catalog Browser and shows it.
