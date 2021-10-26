@@ -61,6 +61,7 @@ class Catalog:
 
         self._engine = None
         self._session = None
+        self._system_tags = []
         if catalog_path is not None:
             self.open(catalog_path, echo, future)
 
@@ -121,6 +122,7 @@ class Catalog:
         Example:
             catalog.authors_by(short_name='Einstein, A.')
         """
+
         return self._session.execute(select(domain.Author).filter_by(**kwargs)).scalars().all()
 
     def document_by(self, tagged_as=None, untagged_as=None, **kwargs):
@@ -146,6 +148,7 @@ class Catalog:
             catalog.document_by(tagged_as=catalog.domain.INCLUDED, untagged_as=[catalog.domain.DUPLICATE])
             catalog.document_by(doi='biblio-ally/10000.0000')
         """
+
         stm = self._document_by(tagged_as=tagged_as, untagged_as=untagged_as, **kwargs)
         return self._session.execute(stm).scalars().first()
 
@@ -171,6 +174,7 @@ class Catalog:
         Example:
             catalog.documents_by(tagged_as=catalog.domain.INCLUDED, untagged_as=[catalog.domain.DUPLICATE])
         """
+
         stm = self._document_by(tagged_as=tagged_as, untagged_as=untagged_as, **kwargs)
         return self._session.execute(stm).scalars().all()
 
@@ -192,6 +196,7 @@ class Catalog:
         Example:
             catalog.keyword_by(name='Machine Learning')
         """
+
         return self._session.execute(select(domain.Keyword).filter_by(**kwargs)).scalars().first()
 
     def keywords_by(self, **kwargs):
@@ -212,6 +217,7 @@ class Catalog:
         Example:
             catalog.keywords_by(name='Machine Learning')
         """
+
         return self._session.execute(select(domain.Keyword).filter_by(**kwargs)).scalars().all()
 
     def tag_by(self, **kwargs):
@@ -232,6 +238,7 @@ class Catalog:
         Example:
             catalog.tag_by(name='accepted')
         """
+
         return self._session.execute(select(domain.Tag).filter_by(**kwargs)).scalars().first()
 
     def tags_by(self, **kwargs):
@@ -252,6 +259,7 @@ class Catalog:
         Example:
             catalog.tags_by(name='accepted')
         """
+
         return self._session.execute(select(domain.Tag).filter_by(**kwargs)).scalars().all()
 
     def import_from_file(self, source: str, filename: str):
@@ -280,6 +288,7 @@ class Catalog:
             import BiblioAlly.wos as wos
             added, loaded, total = catalog.import_from_file(wos.WebOfScience, '.\\WoS\\refs.bib')
         """
+
         if source not in Catalog.translators:
             return 0, 0, 0
         translator_class = Catalog.translators[source]
@@ -351,6 +360,7 @@ class Catalog:
             total = catalog.export_to_file(wos.WebOfScience, '.\\WoS\\refs.bib',
                     export_if=lambda d: d.is_tagged(domain.TAG_ACCEPTED))
         """
+
         if target not in Catalog.translators:
             return 0
         translator_class = Catalog.translators[target]
@@ -372,8 +382,10 @@ class Catalog:
 
         The catalog will report False in is_open property.
         """
+
         self._session = None
         self._engine = None
+        self._system_tags = []
 
     def commit(self):
         """
@@ -381,6 +393,7 @@ class Catalog:
 
         Ignored if the catalog is not open.
         """
+
         if self.is_open:
             self._session.commit()
 
@@ -390,15 +403,18 @@ class Catalog:
 
         The catalog will report True in is_open property.
         """
+
         self._engine = create_engine('sqlite+pysqlite:///' + catalog_path, echo=echo, future=future)
         self._update_database(self._engine, domain.biblioally_mapper)
         self._session = Session(self._engine)
-        self._tag_by_name(domain.TAG_IMPORTED, auto_create=True)
-        self._tag_by_name(domain.TAG_DUPLICATE, auto_create=True)
-        self._tag_by_name(domain.TAG_EXCLUDED, auto_create=True)
-        self._tag_by_name(domain.TAG_PRE_ACCEPTED, auto_create=True)
-        self._tag_by_name(domain.TAG_ACCEPTED, auto_create=True)
-        self._session.commit()
+        self._system_tags = self.tags_by(system_tag=True)
+        if len(self._system_tags) == 0:
+            self._system_tags.append(self._tag_by_name(domain.TAG_IMPORTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(domain.TAG_DUPLICATE, auto_create=True))
+            self._system_tags.append(self._tag_by_name(domain.TAG_EXCLUDED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(domain.TAG_PRE_ACCEPTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(domain.TAG_ACCEPTED, auto_create=True))
+            self._session.commit()
 
     def tag(self, document: domain.Document, tags):
         """
@@ -416,6 +432,7 @@ class Catalog:
         If the document is already that tagged, nothing happens. If a Tag instance does not exist for the tag name
         passed, it will be created, otherwise the existing Tag will be used.
         """
+
         return self._tag(document, tags)
 
     @staticmethod
@@ -434,6 +451,7 @@ class Catalog:
 
         If the document is already that untagged, nothing happens.
         """
+
         document.untag(tag_name)
         return document
 
@@ -445,7 +463,19 @@ class Catalog:
         Returns:
             True if the catalog is open, False otherwise.
         """
+
         return self._session is not None
+
+    @property
+    def system_tags(self):
+        """
+        Returns a list with all system Tags.
+
+        Returns:
+            A list containing all the system Tags.
+        """
+
+        return self._system_tags
 
     def _add_keyword(self, document, keyword_name):
         if document.has_keyword(keyword_name):

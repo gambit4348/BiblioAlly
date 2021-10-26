@@ -4,6 +4,8 @@ Declares and exports the Browser class that is a GUI based support tool for oper
 
 import datetime
 import PySimpleGUI as sg
+import matplotlib as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PySimpleGUI import LISTBOX_SELECT_MODE_MULTIPLE
 from . import catalog as cat
 from . import domain
@@ -27,7 +29,8 @@ BUTTON_TAG_SELECTED = '-TAG-SELECTED-'
 
 BUTTON_TAG_FILTERS = '-TAG-FILTERS-'
 
-TABLE_DOCUMENTS = '-DOCUMENTS-'
+CANVAS_DOCUMENTS = '-TABLE-DOCUMENTS-'
+TABLE_DOCUMENTS = '-CANVAS-DOCUMENTS-'
 FIELD_ABSTRACT = '-DOC-ABSTRACT-'
 FIELD_AUTHORS = '-DOC-AUTHORS-'
 FIELD_DOCUMENT_TYPE = '-DOC-DOCUMENT-TYPE-'
@@ -72,14 +75,16 @@ button_base_font = 'Arial 10'
 
 duplicate_color = ('#ECFFFF', '#FAB420')
 reject_color = ('#ECFFFF', '#E94763')
-import_color = ('#ECFFFF', '#737A97')
+import_color = ('#ECFFFF', '#626ED4')
 preselect_color = ('#ECFFFF', '#37A4F6')
 select_color = ('#ECFFFF', '#03A399')
 input_color = '#DFDFDF'
 
+background_color = '#D8D8DF'
+
 # Add your new theme colors and settings
 sg.LOOK_AND_FEEL_TABLE['BiblioAllyTheme'] = {
-    'BACKGROUND': '#D8D8DF',
+    'BACKGROUND': background_color,
     'TEXT': '#737A97',
     'INPUT': input_color,
     'TEXT_INPUT': '#636A87',
@@ -121,6 +126,10 @@ class Browser:
         self._additional_tags = []
         self._selected_document = None
         self._window = None
+        self._fig = None
+        self._ax = None
+        self._figure_canvas = None
+
 
     def show(self):
         """
@@ -136,6 +145,9 @@ class Browser:
             browser.show()
         """
 
+        self._fig = plt.figure.Figure(figsize=(6.5, 6.5), dpi=75, facecolor=background_color)
+        self._ax = self._fig.add_subplot(111)
+
         self._load_documents()
         self._filter_documents()
 
@@ -143,6 +155,7 @@ class Browser:
         self._window.maximize()
         self._update_table()
         self._update_reject_reasons()
+        self._update_mini_dashboard()
         self._select_document_by_index(0)
         self._window[TABLE_DOCUMENTS].expand(True, True)
         self._window[COL_OPERATIONS].expand(True, True)
@@ -177,16 +190,19 @@ class Browser:
                 if event == BUTTON_DOC_PRESELECT:
                     self.pre_select_document(self._selected_document)
                     self._filter_documents()
+                    self._update_mini_dashboard()
                     self._update_table(row_index)
                     self._select_document_by_index(row_index)
                 elif event == BUTTON_DOC_SELECT:
                     self.select_document(self._selected_document)
                     self._filter_documents()
+                    self._update_mini_dashboard()
                     self._update_table(row_index)
                     self._select_document_by_index(row_index)
                 elif event == BUTTON_DOC_RESET:
                     self.reset_document(self._selected_document)
                     self._filter_documents()
+                    self._update_mini_dashboard()
                     self._update_table(row_index)
                     self._select_document_by_index(row_index)
         self._window.close()
@@ -348,11 +364,12 @@ class Browser:
             self.reject_document(self._selected_document, selected_tags)
         self._filter_documents()
         self._update_table(document_row_index)
+        self._update_mini_dashboard()
         self._select_document_by_index(document_row_index)
 
     def _main_window(self):
-        doc_headings = ['Year', 'Title', 'Authors', 'Kind', 'Origin']
-        doc_widths = [4, 95, 45, 15, 15]
+        doc_headings = ['Year', 'Title', 'Authors', 'Origin']
+        doc_widths = [4, 95, 45, 10]
 
         main_layout = [
             [
@@ -381,7 +398,8 @@ class Browser:
                 sg.Table([], key=TABLE_DOCUMENTS, enable_events=True, headings=doc_headings,
                          alternating_row_color=table_background_color,
                          auto_size_columns=False, col_widths=doc_widths, justification='left',
-                         visible_column_map=[h[0] != '~' for h in doc_headings], num_rows=20)
+                         visible_column_map=[h[0] != '~' for h in doc_headings], num_rows=20),
+                sg.Canvas(key=CANVAS_DOCUMENTS)
             ],
             [
                 sg.Text(text='', key=FIELD_TAGS, size=(200, 1), font=text_font, text_color=text_color,
@@ -528,6 +546,31 @@ class Browser:
         self._window[LABEL_DOC_METADATA].update(visible=element_visible)
         self._window[FIELD_METADATA].update(visible=element_visible)
         self._window[BUTTON_EDIT_DOC_METADATA].update(visible=element_visible)
+
+    def _update_mini_dashboard(self):
+        doc_tags = dict()
+        for doc in self._all_documents:
+            for tag in self._catalog.system_tags:
+                if tag in doc_tags:
+                    doc_tags[tag] += 1 if tag in [dt.tag for dt in doc.tags] else 0
+                else:
+                    doc_tags[tag] = 1
+        sort_order = [domain.TAG_PRE_ACCEPTED, domain.TAG_DUPLICATE, domain.TAG_ACCEPTED, domain.TAG_EXCLUDED,
+                      domain.TAG_IMPORTED]
+        colors = [preselect_color[1], duplicate_color[1], select_color[1], reject_color[1], import_color[1]]
+        doc_tags = sorted(list(doc_tags.items()), key=lambda dt: sort_order.index(dt[0].name))
+        labels = [t[0].name.capitalize() for t in doc_tags]
+        sizes = [t[1] for t in doc_tags]
+
+        self._ax.clear()
+        self._ax.pie(sizes, labels=labels, colors=colors, wedgeprops=dict(width=0.5), startangle=-40,
+                     autopct=lambda p: f'{p:.2f}%\n({p*sum(sizes)/100 :.0f})',
+                     pctdistance=0.85)
+        canvas = self._window[CANVAS_DOCUMENTS].TKCanvas
+        if self._figure_canvas is None:
+            self._figure_canvas = FigureCanvasTkAgg(self._fig, canvas)
+        self._figure_canvas.draw()
+        self._figure_canvas.get_tk_widget().pack(side="top", fill="both", expand=0)
 
     def _update_reject_reasons(self):
         self._reject_reasons = self._catalog.tags_by(system_tag=False)
