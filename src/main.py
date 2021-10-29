@@ -1,16 +1,12 @@
 from BiblioAlly import gui
 from BiblioAlly import catalog as cat
 
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
 
 def main():
-    #base_path = "..\\"
-    base_path = ".\\tests\\"
-    base_file = base_path + 'BiblioAllyTests.db' # 'DeceptionDetection.db'
+    base_path = "..\\"
+    base_file = base_path + 'DeceptionDetection.db'
+    #base_path = ".\\tests\\"
+    #base_file = base_path + 'BiblioAllyTests.db'
     catalog = cat.Catalog(base_file)
 
     browser = gui.Browser(catalog)
@@ -20,5 +16,3 @@ def main():
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main()
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/

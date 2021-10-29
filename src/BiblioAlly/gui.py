@@ -549,12 +549,12 @@ class Browser:
 
     def _update_mini_dashboard(self):
         doc_tags = dict()
+        for tag in self._catalog.system_tags:
+            doc_tags[tag] = 0
         for doc in self._all_documents:
             for tag in self._catalog.system_tags:
                 if tag in doc_tags:
                     doc_tags[tag] += 1 if tag in [dt.tag for dt in doc.tags] else 0
-                else:
-                    doc_tags[tag] = 1
         sort_order = [domain.TAG_PRE_SELECTED, domain.TAG_DUPLICATE, domain.TAG_SELECTED, domain.TAG_REJECTED,
                       domain.TAG_IMPORTED]
         colors = [preselect_color[1], duplicate_color[1], select_color[1], reject_color[1], import_color[1]]
@@ -564,13 +564,13 @@ class Browser:
 
         total_count = sum(sizes)
         self._ax.clear()
-        self._ax.pie(sizes, labels=labels, colors=colors, wedgeprops=dict(width=0.5), startangle=-40,
+        self._ax.pie(sizes, labels=labels, colors=colors, wedgeprops=dict(width=0.5), startangle=40,
                      autopct=lambda p: f'{p:.2f}%\n({p*total_count/100 :.0f})',
                      pctdistance=0.85)
         done_count = total_count - sizes[sort_order.index(domain.TAG_IMPORTED)]
         done_perc = done_count*100/total_count
-        self._ax.text(0, 0.1, f'{done_perc:.2f}%', ha='center', va='center', fontsize=32)
-        self._ax.text(0, -0.1, f'{done_count} / {total_count}', ha='center', va='center', fontsize=18)
+        self._ax.text(0, 0.03, f'{done_perc:.2f}%', ha='center', va='center', fontsize=30)
+        self._ax.text(0, -0.12, f'{done_count} / {total_count}', ha='center', va='center', fontsize=18)
         canvas = self._window[CANVAS_DOCUMENTS].TKCanvas
         if self._figure_canvas is None:
             self._figure_canvas = FigureCanvasTkAgg(self._fig, canvas)
