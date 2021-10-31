@@ -45,11 +45,11 @@ FIELD_TITLE = '-DOC-TITLE-'
 FIELD_YEAR = '-DOC-YEAR-'
 
 tag_for_button = {
-    BUTTON_TAG_SELECTED: domain.TAG_SELECTED,
-    BUTTON_TAG_DUPLICATE: domain.TAG_DUPLICATE,
-    BUTTON_TAG_REJECTED: domain.TAG_REJECTED,
-    BUTTON_TAG_IMPORTED: domain.TAG_IMPORTED,
-    BUTTON_TAG_PRE_SELECTED: domain.TAG_PRE_SELECTED
+    BUTTON_TAG_SELECTED: cat.TAG_SELECTED,
+    BUTTON_TAG_DUPLICATE: cat.TAG_DUPLICATE,
+    BUTTON_TAG_REJECTED: cat.TAG_REJECTED,
+    BUTTON_TAG_IMPORTED: cat.TAG_IMPORTED,
+    BUTTON_TAG_PRE_SELECTED: cat.TAG_PRE_SELECTED
 }
 label_for_button = {
     BUTTON_TAG_SELECTED: 'Selected',
@@ -122,7 +122,7 @@ class Browser:
         self._all_documents = []
         self._visible_documents = []
         self._active_tags = [
-            domain.TAG_SELECTED, domain.TAG_DUPLICATE, domain.TAG_REJECTED, domain.TAG_IMPORTED, domain.TAG_PRE_SELECTED
+            cat.TAG_SELECTED, cat.TAG_DUPLICATE, cat.TAG_REJECTED, cat.TAG_IMPORTED, cat.TAG_PRE_SELECTED
         ]
         self._additional_tags = []
         self._selected_document = None
@@ -215,28 +215,28 @@ class Browser:
         return '; '.join([kw.name for kw in keywords])
 
     def pre_select_document(self, document: domain.Document):
-        self._catalog.tag(document, domain.TAG_PRE_SELECTED)
-        self._catalog.untag(document, domain.TAG_IMPORTED)
+        self._catalog.tag(document, cat.TAG_PRE_SELECTED)
+        self._catalog.untag(document, cat.TAG_IMPORTED)
         document.reason = None
         self._catalog.commit()
 
     def reject_document(self, document: domain.Document, reason_tags):
         if type(reason_tags) is not list:
             reason_tags = [reason_tags]
-        document.untag(domain.TAG_IMPORTED)
-        self._catalog.tag(document, [domain.TAG_REJECTED] + reason_tags)
+        document.untag(cat.TAG_IMPORTED)
+        self._catalog.tag(document, [cat.TAG_REJECTED] + reason_tags)
         self._catalog.commit()
         return [document_tag.tag for document_tag in document.tags]
 
     def select_document(self, document: domain.Document):
-        self._catalog.tag(document, domain.TAG_SELECTED)
-        self._catalog.untag(document, domain.TAG_PRE_SELECTED)
+        self._catalog.tag(document, cat.TAG_SELECTED)
+        self._catalog.untag(document, cat.TAG_PRE_SELECTED)
         document.reason = None
         self._catalog.commit()
 
     def reset_document(self, document: domain.Document):
         self._catalog.untag(document, [document_tag.tag for document_tag in document.tags])
-        self._catalog.tag(document, domain.TAG_IMPORTED)
+        self._catalog.tag(document, cat.TAG_IMPORTED)
         document.reason = None
         self._catalog.commit()
 
@@ -537,12 +537,12 @@ class Browser:
         self._window[FIELD_TAGS].update(' '.join([f'[{document_tag.tag.name}]' for document_tag in document.tags]))
         self._window[FIELD_TITLE].update(document.title)
         self._window[FIELD_YEAR].update(document.year)
-        self._window[BUTTON_DOC_PRESELECT].update(disabled=document.is_tagged(domain.TAG_PRE_SELECTED))
-        self._window[BUTTON_DOC_SELECT].update(disabled=not document.is_tagged(domain.TAG_PRE_SELECTED))
-        element_visible = document.is_tagged(domain.TAG_IMPORTED) or document.is_tagged(domain.TAG_PRE_SELECTED)
+        self._window[BUTTON_DOC_PRESELECT].update(disabled=document.is_tagged(cat.TAG_PRE_SELECTED))
+        self._window[BUTTON_DOC_SELECT].update(disabled=not document.is_tagged(cat.TAG_PRE_SELECTED))
+        element_visible = document.is_tagged(cat.TAG_IMPORTED) or document.is_tagged(cat.TAG_PRE_SELECTED)
         self._window[LABEL_DOC_REJECT].update(visible=element_visible)
         self._window[LIST_DOC_REJECT].update(visible=element_visible)
-        element_visible = document.is_tagged(domain.TAG_SELECTED)
+        element_visible = document.is_tagged(cat.TAG_SELECTED)
         self._window[LABEL_DOC_METADATA].update(visible=element_visible)
         self._window[FIELD_METADATA].update(visible=element_visible)
         self._window[BUTTON_EDIT_DOC_METADATA].update(visible=element_visible)
@@ -555,8 +555,7 @@ class Browser:
             for tag in self._catalog.system_tags:
                 if tag in doc_tags:
                     doc_tags[tag] += 1 if tag in [dt.tag for dt in doc.tags] else 0
-        sort_order = [domain.TAG_PRE_SELECTED, domain.TAG_DUPLICATE, domain.TAG_SELECTED, domain.TAG_REJECTED,
-                      domain.TAG_IMPORTED]
+        sort_order = [cat.TAG_PRE_SELECTED, cat.TAG_DUPLICATE, cat.TAG_SELECTED, cat.TAG_REJECTED, cat.TAG_IMPORTED]
         colors = [preselect_color[1], duplicate_color[1], select_color[1], reject_color[1], import_color[1]]
         doc_tags = sorted(list(doc_tags.items()), key=lambda dt: sort_order.index(dt[0].name))
         labels = [t[0].name for t in doc_tags]
@@ -567,7 +566,7 @@ class Browser:
         self._ax.pie(sizes, labels=labels, colors=colors, wedgeprops=dict(width=0.5), startangle=40,
                      autopct=lambda p: f'{p:.2f}%\n({p*total_count/100 :.0f})',
                      pctdistance=0.85)
-        done_count = total_count - sizes[sort_order.index(domain.TAG_IMPORTED)]
+        done_count = total_count - sizes[sort_order.index(cat.TAG_IMPORTED)]
         done_perc = done_count*100/total_count
         self._ax.text(0, 0.03, f'{done_perc:.2f}%', ha='center', va='center', fontsize=30)
         self._ax.text(0, -0.12, f'{done_count} / {total_count}', ha='center', va='center', fontsize=18)

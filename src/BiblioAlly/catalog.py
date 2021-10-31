@@ -2,12 +2,19 @@
 Declares and exports the main class of BiblioAlly, the Catalog class and some utility functions.
 """
 import datetime
-from . import domain
-from .utility import alphanum_crc32
 from functools import reduce
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import select
+
+from . import domain
+
+TAG_SELECTED = 'Selected'
+TAG_DUPLICATE = 'Duplicate'
+TAG_REJECTED = 'Rejected'
+TAG_IMPORTED = 'Imported'
+TAG_PRE_SELECTED = 'Pre-selected'
 
 
 class Catalog:
@@ -62,10 +69,7 @@ class Catalog:
         self._engine = None
         self._session = None
         self._system_tags = []
-        self._system_tag_names = [
-                    domain.TAG_SELECTED, domain.TAG_DUPLICATE, domain.TAG_REJECTED, domain.TAG_IMPORTED,
-                    domain.TAG_PRE_SELECTED
-                ]
+        self._system_tag_names = [TAG_SELECTED, TAG_DUPLICATE, TAG_REJECTED, TAG_IMPORTED, TAG_PRE_SELECTED]
         if catalog_path is not None:
             self.open(catalog_path, echo, future)
 
@@ -324,10 +328,10 @@ class Catalog:
                 self._update_keywords(loaded_document)
                 added_count += 1
                 if existing_document is not None:
-                    self._tag(loaded_document, domain.TAG_DUPLICATE)
+                    self._tag(loaded_document, TAG_DUPLICATE)
                     existing_document.duplicates.append(loaded_document)
                 else:
-                    self._tag(loaded_document, domain.TAG_IMPORTED)
+                    self._tag(loaded_document, TAG_IMPORTED)
                     session.add(loaded_document)
         finally:
             self._session.commit()
@@ -413,11 +417,11 @@ class Catalog:
         self._session = Session(self._engine)
         self._system_tags = self.tags_by(system_tag=True)
         if len(self._system_tags) == 0:
-            self._system_tags.append(self._tag_by_name(domain.TAG_IMPORTED, auto_create=True))
-            self._system_tags.append(self._tag_by_name(domain.TAG_DUPLICATE, auto_create=True))
-            self._system_tags.append(self._tag_by_name(domain.TAG_REJECTED, auto_create=True))
-            self._system_tags.append(self._tag_by_name(domain.TAG_PRE_SELECTED, auto_create=True))
-            self._system_tags.append(self._tag_by_name(domain.TAG_SELECTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(TAG_IMPORTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(TAG_DUPLICATE, auto_create=True))
+            self._system_tags.append(self._tag_by_name(TAG_REJECTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(TAG_PRE_SELECTED, auto_create=True))
+            self._system_tags.append(self._tag_by_name(TAG_SELECTED, auto_create=True))
             self._session.commit()
 
     def tag(self, document: domain.Document, tags):

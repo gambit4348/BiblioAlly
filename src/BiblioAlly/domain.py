@@ -10,12 +10,6 @@ from sqlalchemy import Table, ForeignKey, Column, Integer, String, Date, Boolean
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import registry, relationship, backref
 
-TAG_SELECTED = 'Selected'
-TAG_DUPLICATE = 'Duplicate'
-TAG_REJECTED = 'Rejected'
-TAG_IMPORTED = 'Imported'
-TAG_PRE_SELECTED = 'Pre-selected'
-
 biblioally_mapper = registry()
 Base = biblioally_mapper.generate_base()
 

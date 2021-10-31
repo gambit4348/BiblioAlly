@@ -1,7 +1,6 @@
-import datetime
 import unittest
 from unittest import TestCase
-from src.BiblioAlly import catalog as ba
+from src.BiblioAlly import catalog as cat
 from src.BiblioAlly import domain, acmdl as acm, ieee as ieee, scopus as scopus, wos as wos
 
 bibtex_path = 'refs/'
@@ -13,12 +12,12 @@ class TestCatalog(TestCase):
 
     def test_as_dict(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         all_documents = ally.documents_by()
 
         # Act
-        all_documents_dict = ba.as_dict(all_documents,
-                                        tags=lambda tags: [t.tag.name for t in tags])
+        all_documents_dict = cat.as_dict(all_documents,
+                                         tags=lambda tags: [t.tag.name for t in tags])
 
         # Assert
         ally.close()
@@ -26,51 +25,51 @@ class TestCatalog(TestCase):
 
     def test_export_to_acm_dl(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         export_count = ally.export_to_file(acm.AcmDL, bibtex_path + 'exported_acm_dl.bib',
-                                           should_export=lambda d: d.is_tagged(domain.TAG_SELECTED))
+                                           should_export=lambda d: d.is_tagged(cat.TAG_SELECTED))
 
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
 
     def test_export_to_ieee_xplore(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         export_count = ally.export_to_file(ieee.IeeeXplore, bibtex_path + 'exported_ieee_xplore.bib',
-                                           should_export=lambda d: d.is_tagged(domain.TAG_SELECTED))
+                                           should_export=lambda d: d.is_tagged(cat.TAG_SELECTED))
 
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
 
     def test_export_to_scopus(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         export_count = ally.export_to_file(scopus.Scopus, bibtex_path + 'exported_scopus.bib',
-                                           should_export=lambda d: d.is_tagged(domain.TAG_SELECTED))
+                                           should_export=lambda d: d.is_tagged(cat.TAG_SELECTED))
 
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
 
     def test_export_to_web_of_science(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         export_count = ally.export_to_file(wos.WebOfScience, bibtex_path + 'exported_web_of_science.bib',
-                                           should_export=lambda d: d.is_tagged(domain.TAG_SELECTED))
+                                           should_export=lambda d: d.is_tagged(cat.TAG_SELECTED))
 
         # Assert
         self.assertEqual(export_count, 72, 'Unexpected export count')
 
     def test_import_refs_from_invalid(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         added_count, file_count, base_count = ally.import_from_file('INVALID', bibtex_path + 'invalid.bib')
@@ -81,7 +80,7 @@ class TestCatalog(TestCase):
     @unittest.skip("skipping ACM DL")
     def test_import_refs_from_acm_dl(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         added_count, file_count, base_count = ally.import_from_file(acm.AcmDL, bibtex_path + 'acm_dl.bib')
@@ -92,7 +91,7 @@ class TestCatalog(TestCase):
     @unittest.skip("skipping IEEEXplore")
     def test_import_refs_from_ieee_xplore(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         added_count, file_count, base_count = ally.import_from_file(ieee.IeeeXplore, bibtex_path + 'ieeexplore.bib')
@@ -103,7 +102,7 @@ class TestCatalog(TestCase):
     @unittest.skip("skipping Scopus")
     def test_import_refs_from_scopus(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         added_count, file_count, base_count = ally.import_from_file(scopus.Scopus, bibtex_path + 'scopus.bib')
@@ -114,7 +113,7 @@ class TestCatalog(TestCase):
     @unittest.skip("skipping Web of Science")
     def test_import_refs_from_web_of_science(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         added_count, file_count, base_count = ally.import_from_file(wos.WebOfScience, bibtex_path + 'web_of_science.bib')
@@ -124,7 +123,7 @@ class TestCatalog(TestCase):
 
     def test_retrieve_document_by_id(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document_id = 1
 
         # Act
@@ -136,9 +135,9 @@ class TestCatalog(TestCase):
 
     def test_retrieve_document_not_tagged(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
-        tag = domain.TAG_PRE_SELECTED
-        untag = domain.TAG_IMPORTED
+        ally = cat.Catalog(self.catalog_path)
+        tag = cat.TAG_PRE_SELECTED
+        untag = cat.TAG_IMPORTED
         tagged_document_id = 121
         document = ally.document_by(id=tagged_document_id)
         updated = False
@@ -151,7 +150,7 @@ class TestCatalog(TestCase):
         if updated:
             ally.commit()
             ally.close()
-            ally = ba.Catalog(self.catalog_path)
+            ally = cat.Catalog(self.catalog_path)
 
         # Act
         documents = ally.documents_by(untagged_as=untag)
@@ -160,19 +159,19 @@ class TestCatalog(TestCase):
         self.assertIsNotNone(documents, f'Documents without TAG={untag} not retrieved')
         self.assertGreater(len(documents), 0, f'No documents not tagged as {untag} were retrieved')
         for doc in documents:
-            self.assertTrue(doc.is_tagged(tag), f'Document {doc} not tagged as {tag}')
+            self.assertFalse(doc.is_tagged(tag), f'Document {doc} is tagged as {tag}')
 
     def test_retrieve_document_tagged(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
-        tag = domain.TAG_PRE_SELECTED
+        ally = cat.Catalog(self.catalog_path)
+        tag = cat.TAG_PRE_SELECTED
         tagged_document_id = 121
         document = ally.document_by(id=tagged_document_id)
         if not document.is_tagged(tag):
             ally.tag(document, tag)
             ally.commit()
             ally.close()
-            ally = ba.Catalog(self.catalog_path)
+            ally = cat.Catalog(self.catalog_path)
 
         # Act
         document = ally.document_by(tagged_as=tag, id=tagged_document_id)
@@ -184,9 +183,9 @@ class TestCatalog(TestCase):
 
     def test_retrieve_document_tagged_not_tagged(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
-        tag = domain.TAG_PRE_SELECTED
-        untag = domain.TAG_IMPORTED
+        ally = cat.Catalog(self.catalog_path)
+        tag = cat.TAG_PRE_SELECTED
+        untag = cat.TAG_IMPORTED
         tagged_document_id = 121
         document = ally.document_by(id=tagged_document_id)
         updated = False
@@ -199,7 +198,7 @@ class TestCatalog(TestCase):
         if updated:
             ally.commit()
             ally.close()
-            ally = ba.Catalog(self.catalog_path)
+            ally = cat.Catalog(self.catalog_path)
 
         # Act
         documents = ally.documents_by(tagged_as=tag, untagged_as=untag)
@@ -212,7 +211,7 @@ class TestCatalog(TestCase):
 
     def test_add_document_metadata(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document_id = 2
         document = ally.document_by(id=document_id)
         if document.review_metadata is not None:
@@ -227,21 +226,21 @@ class TestCatalog(TestCase):
 
         # Assert
         ally.close()
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
         self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
         self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
 
     def test_remove_document_summary(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document_id = 4
         document = ally.document_by(id=document_id)
         if document.review_metadata is None:
             document.review_metadata = domain.DocumentMetadata(content='OLD content')
             ally.commit()
             ally.close()
-            ally = ba.Catalog(self.catalog_path)
+            ally = cat.Catalog(self.catalog_path)
             document = ally.document_by(id=document_id)
 
         # Act
@@ -250,20 +249,20 @@ class TestCatalog(TestCase):
 
         # Assert
         ally.close()
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
         self.assertIsNone(document.review_metadata, 'Document summary still retrieved')
 
     def test_replace_document_summary(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document_id = 4
         document = ally.document_by(id=document_id)
         if document.review_metadata is None:
             document.review_metadata = domain.DocumentMetadata(content='OLD content')
             ally.commit()
             ally.close()
-            ally = ba.Catalog(self.catalog_path)
+            ally = cat.Catalog(self.catalog_path)
             document = ally.document_by(id=document_id)
 
         # Act
@@ -275,14 +274,14 @@ class TestCatalog(TestCase):
 
         # Assert
         ally.close()
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
         self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
         self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
 
     def test_update_document_summary(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document_id = 3
         document = ally.document_by(id=document_id)
         if document.review_metadata is None:
@@ -296,14 +295,14 @@ class TestCatalog(TestCase):
 
         # Assert
         ally.close()
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
         self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
         self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
 
     def test_create(self):
         # Arrange
-        ally = ba.Catalog()
+        ally = cat.Catalog()
 
         # Act
         # Nothing here!
@@ -316,14 +315,14 @@ class TestCatalog(TestCase):
         ally = None
 
         # Act
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Assert
         self.assertTrue(ally.is_open, 'Catalog is not open')
 
     def test_open(self):
         # Arrange
-        ally = ba.Catalog()
+        ally = cat.Catalog()
 
         # Act
         ally.open(self.catalog_path)
@@ -333,7 +332,7 @@ class TestCatalog(TestCase):
 
     def test_close(self):
         # Arrange
-        ally = ba.Catalog(self.catalog_path)
+        ally = cat.Catalog(self.catalog_path)
 
         # Act
         ally.close()
