@@ -5,7 +5,7 @@ A usual protocol is presented below. It's not the exact research protocol and su
 not intents to establish any methodological path. It is just a way of using **BiblioAlly** in order to
 take the best of it and to present what are the features currently covered.
 
-![The typical BiblioAlly Workflow](..\assets\images\BiblioAlly-workflow.jpg "BiblioAlly typical workflow")
+![The typical BiblioAlly Workflow](../images/BiblioAlly-workflow.jpg "BiblioAlly typical workflow")
 The typical **BiblioAlly** Workflow.
 
 The blue line at the bottom represents the time and the numbered blue circles are the major milestones of the project.
