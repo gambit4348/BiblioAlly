@@ -3,7 +3,7 @@
 The **BiblioAlly Browser** offers a visual way to operate on the Catalog and track what was
 already done and what is still to be done during the various phases of the Literature Review [workflow](workflow.md).
 
-![](D:\Users\Alex\OneDrive\Documentos\Ciência\Doutorado\2-Inter\Pesquisa\Produção\Python\BiblioAlly\assets\images\BiblioAlly-browser.jpg "BiblioAlly Browser anatomy")
+![Anatomy of the BiblioAlly Browser](../images/BiblioAlly-browser.jpg "BiblioAlly Browser anatomy")
 Anatomy of the **BiblioAlly** Browser.
 
 The Browser is no more than a single window and two pop-up dialogs. In the main window the user will find most of the visual
