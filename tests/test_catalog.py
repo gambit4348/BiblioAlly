@@ -159,7 +159,7 @@ class TestCatalog(TestCase):
         self.assertIsNotNone(documents, f'Documents without TAG={untag} not retrieved')
         self.assertGreater(len(documents), 0, f'No documents not tagged as {untag} were retrieved')
         for doc in documents:
-            self.assertFalse(doc.is_tagged(tag), f'Document {doc} is tagged as {tag}')
+            self.assertFalse(doc.is_tagged(untag), f'Document {doc} is tagged as {untag}')
 
     def test_retrieve_document_tagged(self):
         # Arrange
@@ -209,96 +209,98 @@ class TestCatalog(TestCase):
         for doc in documents:
             self.assertTrue(doc.is_tagged(tag), f'Document {doc} not tagged as {tag}')
 
-    def test_add_document_metadata(self):
+    def test_add_document_attachment(self):
         # Arrange
         ally = cat.Catalog(self.catalog_path)
         document_id = 2
         document = ally.document_by(id=document_id)
-        if document.review_metadata is not None:
-            document.review_metadata = None
+        if len(document.attachments) > 0:
+            document.attachments = []
             ally.commit()
 
         # Act
-        content = '$$$' + document.review_metadata.content if document.review_metadata is not None else ''
-        summary = domain.DocumentMetadata(content=content)
-        document.review_metadata = summary
+        content = '$$$ Document Attachment $$$'
+        summary = domain.DocumentAttachment(name='Test', content=content)
+        document.attachments.append(summary)
         ally.commit()
 
         # Assert
         ally.close()
         ally = cat.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
-        self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
-        self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
+        self.assertEquals(1, len(document.attachments), 'Document attachment not retrieved')
+        self.assertEquals('Test', document.attachments[0].name, 'Document attachment name not as expected')
+        self.assertEquals(content, document.attachments[0].content, 'Document attachment not as expected')
 
-    def test_remove_document_summary(self):
+    def test_remove_document_attachment(self):
         # Arrange
         ally = cat.Catalog(self.catalog_path)
         document_id = 4
         document = ally.document_by(id=document_id)
-        if document.review_metadata is None:
-            document.review_metadata = domain.DocumentMetadata(content='OLD content')
+        if len(document.attachments) == 0:
+            document.attachments.append(domain.DocumentAttachment(name='Test OLD', content='OLD content'))
             ally.commit()
             ally.close()
             ally = cat.Catalog(self.catalog_path)
             document = ally.document_by(id=document_id)
 
         # Act
-        document.review_metadata = None
+        document.attachments = []
         ally.commit()
 
         # Assert
         ally.close()
         ally = cat.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
-        self.assertIsNone(document.review_metadata, 'Document summary still retrieved')
+        self.assertEquals(0, len(document.attachments), 'Document attachment still retrieved')
 
-    def test_replace_document_summary(self):
+    def test_replace_document_attachment(self):
         # Arrange
         ally = cat.Catalog(self.catalog_path)
         document_id = 4
         document = ally.document_by(id=document_id)
-        if document.review_metadata is None:
-            document.review_metadata = domain.DocumentMetadata(content='OLD content')
+        if document.attachments == 0:
+            document.attachments.append(domain.DocumentAttachment(name='Test OLD', content='OLD content'))
             ally.commit()
             ally.close()
             ally = cat.Catalog(self.catalog_path)
             document = ally.document_by(id=document_id)
 
         # Act
-        document.review_metadata = None
+        document.attachments = []
         ally.commit()
         content = 'NEW content'
-        document.review_metadata = domain.DocumentMetadata(content=content)
+        document.attachments.append(domain.DocumentAttachment(name='Test NEW', content=content))
         ally.commit()
 
         # Assert
         ally.close()
         ally = cat.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
-        self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
-        self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
+        self.assertGreater(len(document.attachments), 0, 'Document attachment not retrieved')
+        self.assertEqual('Test NEW', document.attachments[0].name, 'Attachment name not as expected')
+        self.assertEqual(content, document.attachments[0].content, 'Attachment content not as expected')
 
-    def test_update_document_summary(self):
+    def test_update_document_attachment(self):
         # Arrange
         ally = cat.Catalog(self.catalog_path)
         document_id = 3
         document = ally.document_by(id=document_id)
-        if document.review_metadata is None:
-            document.review_metadata = domain.DocumentMetadata(content='Content')
+        if len(document.attachments) == 0:
+            document.attachments.append(domain.DocumentAttachment(name='Test OLD', content='OLD Content'))
             ally.commit()
 
         # Act
-        content = 'NEW '+document.review_metadata.content
-        document.review_metadata.content = content
+        content = 'NEW Content'
+        document.attachments[0].content = content
         ally.commit()
 
         # Assert
         ally.close()
         ally = cat.Catalog(self.catalog_path)
         document = ally.document_by(id=document_id)
-        self.assertIsNotNone(document.review_metadata, 'Document summary not retrieved')
-        self.assertEqual(content, document.review_metadata.content, 'Summary not as expected')
+        self.assertGreater(len(document.attachments), 0, 'Document attachment not retrieved')
+        self.assertEqual(content, document.attachments[0].content, 'Document Attachment not as expected')
 
     def test_create(self):
         # Arrange

@@ -20,47 +20,6 @@ Document_Keyword = Table('Document_R_Keyword', Base.metadata,
                          )
 
 
-class DocumentAuthor(Base):
-    """
-    Describes the relationship between a Document and an Author.
-
-    Since a Document my have more than one Author and a given Author may be referenced by more than one Document,
-    this class registers the relationship between those two classes.
-
-    Going beyond than simply registering the relationship, instances of this class also identify which Author is the
-    first one (also named "the corresponding author") and what was the Author's affiliation at the time the
-    Document was published.
-    """
-
-    __tablename__ = 'Document_R_Author'
-    document_id = Column(ForeignKey('Document.id'), primary_key=True)
-    document = relationship('Document')
-    author_id = Column(ForeignKey('Author.id'), primary_key=True)
-    author = relationship('Author')
-    first = Column(Boolean, nullable=False)
-    institution = relationship('Institution')
-    institution_id = Column(Integer, ForeignKey('Institution.id'))
-
-    def __repr__(self):
-        return f'DocumentAuthor(author={self.author!r}, first={self.first!r})' +\
-               f'institution={self.institution!r})'
-
-
-class DocumentTag(Base):
-    """
-    Describes the relationship between a Document and a Tag.
-    """
-
-    __tablename__ = 'Document_R_Tag'
-    document_id = Column(ForeignKey('Document.id'), primary_key=True)
-    document = relationship('Document')
-    tag_id = Column(ForeignKey('Tag.id'), primary_key=True)
-    tag = relationship('Tag')
-
-    def __repr__(self):
-        return f'DocumentTag(document={self.document!r}, tag={self.tag!r})'
-
-
 class Author(Base):
     """
     The author of a given Document.
@@ -133,14 +92,13 @@ class Document(Base):
     document_type = Column(String(32))
     generator = Column(String(32), nullable=False)
     import_date = Column(Date, nullable=False)
+    attachments = relationship('DocumentAttachment', cascade='all, delete-orphan', back_populates='document')
     authors = relationship('DocumentAuthor', cascade='all, delete-orphan', back_populates='document')
     keywords = relationship('Keyword', secondary=Document_Keyword)
     tags = relationship('DocumentTag', cascade='all, delete-orphan', back_populates='document')
     references = relationship('Reference', cascade='all, delete', back_populates='document')
     duplicates = relationship('Document', backref=backref('original_document', remote_side=[id]))
     original_document_id = Column(Integer, ForeignKey('Document.id'))
-    review_metadata = relationship('DocumentMetadata', uselist=False, back_populates='document',
-                                   cascade="all, delete-orphan")
 
     def __init__(self, external_key, kind, title, abstract, keywords, year, affiliations):
         Base.__init__(self)
@@ -159,6 +117,13 @@ class Document(Base):
         elif type(affiliations) == list:
             for affiliation in affiliations:
                 self.authors.append(affiliation)
+
+    def attachment_by_name(self, name: str):
+        found_ones = [a for a in self.attachments if a.name == name]
+        if len(found_ones) > 0:
+            return found_ones[0]
+        else:
+            return None
 
     @hybrid_property
     def first_author(self):
@@ -205,26 +170,71 @@ class Document(Base):
         return f'Document(id={self.id!r}, title={self.title!r}, year={self.year!r}, doi={self.doi!r})'
 
 
-class DocumentMetadata(Base):
+class DocumentAttachment(Base):
     """
-    Describes the relationship between a Document and a DocumentMetadata.
+    Describes a Document attachment.
     """
 
-    __tablename__ = 'Document_Metadata'
+    __tablename__ = 'Document_Attachment'
     id = Column(Integer, primary_key=True)
     content = Column(Text, nullable=False)
+    content_type = Column(String(128))
+    name = Column(String(128), nullable=False)
     import_date = Column(Date, nullable=False)
     document_id = Column(Integer, ForeignKey('Document.id'), nullable=False, unique=True, index=True)
-    document = relationship('Document', back_populates='review_metadata', foreign_keys=[document_id])
+    document = relationship('Document', foreign_keys=[document_id], back_populates='attachments')
 
-    def __init__(self, content, import_date=None):
+    def __init__(self, name: str, content, content_type: str = None, import_date=None):
         Base.__init__(self)
         self.content = content
+        self.content_type = content_type
+        self.name = name
         if import_date is None:
             self.import_date = datetime.date.today()
 
     def __repr__(self):
-        return f'DocumentMetadata(id={self.id!r}, content={self.content!r})'
+        return f'DocumentAttachment(id={self.id!r}, name={self.name!r}, content_type={self.content_type!r})'
+
+
+class DocumentAuthor(Base):
+    """
+    Describes the relationship between a Document and an Author.
+
+    Since a Document my have more than one Author and a given Author may be referenced by more than one Document,
+    this class registers the relationship between those two classes.
+
+    Going beyond than simply registering the relationship, instances of this class also identify which Author is the
+    first one (also named "the corresponding author") and what was the Author's affiliation at the time the
+    Document was published.
+    """
+
+    __tablename__ = 'Document_R_Author'
+    document_id = Column(ForeignKey('Document.id'), primary_key=True)
+    document = relationship('Document')
+    author_id = Column(ForeignKey('Author.id'), primary_key=True)
+    author = relationship('Author')
+    first = Column(Boolean, nullable=False)
+    institution = relationship('Institution')
+    institution_id = Column(Integer, ForeignKey('Institution.id'))
+
+    def __repr__(self):
+        return f'DocumentAuthor(author={self.author!r}, first={self.first!r})' +\
+               f'institution={self.institution!r})'
+
+
+class DocumentTag(Base):
+    """
+    Describes the relationship between a Document and a Tag.
+    """
+
+    __tablename__ = 'Document_R_Tag'
+    document_id = Column(ForeignKey('Document.id'), primary_key=True)
+    document = relationship('Document')
+    tag_id = Column(ForeignKey('Tag.id'), primary_key=True)
+    tag = relationship('Tag')
+
+    def __repr__(self):
+        return f'DocumentTag(document={self.document!r}, tag={self.tag!r})'
 
 
 class Institution(Base):

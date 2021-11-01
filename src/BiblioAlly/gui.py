@@ -304,19 +304,22 @@ class Browser:
         window[METADATA_DOC_YEAR].update(doc.year)
         window[METADATA_CONTENT].expand(True, True)
 
-        if doc.review_metadata is not None:
-            window[METADATA_CONTENT].update(doc.review_metadata.content)
+        document_metadata = doc.attachment_by_name('Metadata')
+        if document_metadata is not None:
+            window[METADATA_CONTENT].update(document_metadata.content)
         while True:
             event, values = window.read()
             if event == sg.WINDOW_CLOSED or event == BUTTON_METADATA_CANCEL:
                 break
             elif event == BUTTON_METADATA_CONFIRM:
                 content = values[METADATA_CONTENT]
-                if doc.review_metadata is not None:
-                    doc.review_metadata.content = content
-                    doc.review_metadata.import_date = datetime.date.today()
+                if document_metadata is None:
+                    document_metadata = domain.DocumentAttachment(name='Metadata', content_type='text/x-python',
+                                                                  content=content)
+                    doc.attachments.append(document_metadata)
                 else:
-                    doc.review_metadata = domain.DocumentMetadata(content)
+                    document_metadata.content = content
+                    document_metadata.import_date = datetime.date.today()
                 self._catalog.commit()
                 self._window[FIELD_METADATA].update(content)
                 break
@@ -531,8 +534,8 @@ class Browser:
         self._window[FIELD_EXTERNAL_KEY].update(document.external_key)
         self._window[FIELD_KEYWORDS].update(self.keyword_names(document.keywords))
         self._window[FIELD_KIND].update(document.kind)
-        self._window[FIELD_METADATA].update(document.review_metadata.content
-                                          if document.review_metadata is not None else '')
+        document_metadata = document.attachment_by_name('Metadata')
+        self._window[FIELD_METADATA].update(document_metadata.content if document_metadata is not None else '')
         self._window[FIELD_ORIGIN].update(document.generator)
         self._window[FIELD_TAGS].update(' '.join([f'[{document_tag.tag.name}]' for document_tag in document.tags]))
         self._window[FIELD_TITLE].update(document.title)
