@@ -9,7 +9,7 @@ This is the **BiblioAlly** GitHub repository. In order to understand what Biblio
 have already go throughout such a workflow knows how time-consuming and exhausting such a work can be.
 
 The current state of **BiblioAlly** covers only a few steps of the process and certainly has a long way to go before it
-can be considered to be a comprehensive support.
+can be considered to have a comprehensive support.
 
 ## Understanding BiblioAlly
 
