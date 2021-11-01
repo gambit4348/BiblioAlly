@@ -1,78 +1,40 @@
+![BiblioAlly Banner](assets/images/BiblioAlly-banner.jpg)
 # Welcome to BiblioAlly
 
-This is the **BiblioAlly** GitHub repository. In order to understand what BiblioAlly is all about start
-reading the FAQ below.
+This is the **BiblioAlly** GitHub repository. In order to understand what BiblioAlly is all about for for the sections below.
 
-## Frequently Asked Questions
+## Getting started
 
-### 1. What exactly is BiblioAlly?
-BiblioAlly is a Python package containing some classes and functions dedicated to help
-people to build scientific literature reviews.
+**BiblioAlly** is designed to support the Literature Review process usually conducted in scientific research. The ones that
+have already go throughout such a workflow knows how time-consuming and exhausting such a work can be.
 
-### 2. Is BiblioAlly an application or computer program?
-BiblioAlly is a set of classes and functions to be used in Python 3.8+, but it also includes
-a GUI module written in PySimpleGui that allows the user to run the literature review with
-some Graphic User Interface sugar. However, everything has to be started from a Python script,
-for instance, in a Jupyter Notebook.
+The current state of **BiblioAlly** covers only a few steps of the process and certainly has a long way to go before it
+can be considered to be a comprehensive support.
 
-### 3. Where is the review data saved?
-BiblioAlly builds a SQLite database file and persists all the data in it by using
-an Object-Relational mapping provided by SqlAlchemy.
+## Understanding BiblioAlly
 
-### 4. What are the features exposed by BiblioAlly?
-BiblioAlly provides BibTex importers for **Scopus**, **Web of Science**, **ACM Digital Library**
-and **IEEEXplore**. By using those importers a standardized database is created. The review is
-conducted and the GUI module allows to manage the usually long-term process of
-reading and storing metadata from the papers.
+The following sections will help you to understand how **BiblioAlly** can help you:
 
-### 5. Does BiblioAlly provide metadata analysis?
-No, BiblioAlly allows to store a Python dictionary that encodes the metadata extracted
-from each paper and later retrieve that metadata to, for instance, feed a
-Pandas DataFrame and generate MatPlotLib charts.
+1. The [FAQ](assets/pages/faq.md), that has some valuable questions and their answers;
+2. The general [Workflow](assets/pages/workflow.md) of BiblioAlly, that exposes a usual way of using the features
+3. resources;
+4. The BiblioAlly [Browser](assets/pages/browser.md) is a Graphic User Interface (GUI) that presents some features 
+helpful during the process.
 
-### 6. What is the typical use of BiblioAlly?
-1. Install the BiblioAlly package
-   1. `pip install BiblioALly`
-   2. `conda install BiblioAlly`
-2. Import it in a Jupyter Notebook
-   1. `from BiblioAlly import catalog as ally`
-3. Create a **BiblioAlly Catalog** (where all data will be stored)
-   1. `catalog = ally.Catalog("my_review.db")`
-4. Import BibTex files into the Catalog
-   1. `from BiblioAlly import wos    # Web of Science`
-   2. `from BiblioAlly import scopus`
-   3. `from BiblioAlly import ieee   # IEEE Xplore`
-   4. `from BiblioAlly import acmdl  # ACM Digital Library`
-   5. `refs_count, load_count, base_cout = catalog.import_from_file(wos.WebOfSciece, "wos.bib")`
-5. Remove duplicates,if any (BiblioAlly will try to remove them automatically, but some can escape the process)
-6. Perform shallow and deep screenings by using the **BiblioAlly Browser**
-   1. `from BiblioAlly import gui`
-   2. `browser = Browser(catalog)`
-   3. `browser.show()`
-7. Register metadata for each of the selected papers
-   1. `catalog.add_summary(metadata_dict)`
-8. select data from the Catalog and analyse it.
-   1. `from BiblioAlly import domain`
-   2. `import pandas as pd`
-   3. `documents = catalog.documents_by(tagged_as=domain.TAG_ACCEPTED)`
-   4. `documents_dict = ally.as_dict(documents)`
-   5. `documents_df = pd.DataFrame(documents_dict)`
+## Using BiblioAlly
 
-### 7. Is BiblioAlly finnished?
-Far from it! There's a number of improvements BiblioAlly may receive to become more useful
-and to allow better and deeper analysis for literature reviews. A few ones that come to mind are:
-1. Calculating Bibliometric indicators
-2. Text mining
-3. Word clouds generation
-4. Automatic content classification
-5. Automatic generation of mind maps
-6. Automatic generation of ontologies
-7. Automatic metadata extraction
-8. Qualitative analysis capabilities
-9. Semantic similarity detection
-10. Operation logging
-11. Collaboration capabilities
-12. Research protocol
-13. Process tracking improvements
-14. Automatic full text retrieval
-15. And so on...
+Below there are some use cases of **BiblioAlly**. They can be useful examples to show how to master the
+BiblioAlly API.
+
+1. [Creating a new](assets/pages/use_case-create_new_catalog.md) BiblioAlly Catalog; 
+2. [Loading](assets/pages/use_case-create_new_catalog.md) a BiblioAlly Catalog;
+3. Testing if a Catalog [is open or not](assets/pages/use_case-catalog_is_open.md);
+4. [Closing](assets/pages/use_case-close.md) a Catalog;
+5. [Importing](assets/pages/use_case-importing_referentes.md) references into the BiblioAlly Catalog;
+6. Loading [documents by tags](assets/pages/use_case-loading_by_tags.md);
+7. Loading [documents by attributes](assets/pages/use_case-loading_by_attributes.md);
+8. [Updating](assets/pages/use_case-updating.md) documents;
+9. Invoking the [Catalog Browser](assets/pages/use_case-invoking_browser.md);
+10. Retrieving [document metadata](assets/pages/use_case-retrieving_metadata.md);
+11. Converting documents to [Pandas DataFrames](assets/pages/use_case-converting_to_pandas.md).
+
