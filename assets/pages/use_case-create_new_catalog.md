@@ -9,7 +9,7 @@ work for creating all the tables and indexes, the very first access may last lon
 The code for creating and loading the **BiblioAlly** Catalog is below. The last line instantiates the
 Catalog and returns it. At this moment, the SQLite database file named `MyReview.db` will be created
 if necessary and the data schema all prepared.
-```
+```python
 # Importing dependencies
 from BiblioAlly import gui
 from BiblioAlly import catalog as cat

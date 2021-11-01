@@ -6,7 +6,7 @@ A **BiblioAlly** Catalog will remain open until the method `close()` is called. 
 will release all system resources taken, specially the ones related to the SQLite database file.
 
 The code for closing a **BiblioAlly** Catalog is below.
-```
+```python
 # Until here BiblioAlly is consuming system resources and keeping the SQL database file open
 
 catalog.close()

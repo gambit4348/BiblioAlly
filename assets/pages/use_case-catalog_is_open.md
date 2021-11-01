@@ -8,7 +8,7 @@ While the Catalog is open, operations can be issued on the domain objects mainta
 Catalog. This consumes memory resources that will be returned to the system only when the Catalog is closed. 
 
 The code for testing the state of a **BiblioAlly** Catalog is below
-```
+```python
 # Instantiating the Catalog
 catalog_path = ".\\My review\\"
 catalog_file = catalog_path + 'MyReview.db'

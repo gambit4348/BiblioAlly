@@ -12,7 +12,7 @@ return the amount of records imported, the amount existing in the file and the a
 documents existing in the Catalog after the import is done.
 
 **BiblioAlly** provides importers for ACM Digital Library, IEEE Xport, Scopus and Web of Science.
-```
+```python
 # Importing translator dependencies
 import BiblioAlly.acmdl as acm
 import BiblioAlly.ieee as ieee

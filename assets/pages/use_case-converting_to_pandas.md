@@ -6,7 +6,7 @@ it may be useful to have **BiblioAlly** Documents translated to Pandas DataFrame
 meta-analysis easier. For convenience, **BiblioAlly** provides a function named `as_dict()`.
 
 The code for converting documents from the **BiblioAlly** Catalog is below.
-```
+```python
 import pandas as pd
 
 

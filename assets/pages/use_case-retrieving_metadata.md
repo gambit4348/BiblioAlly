@@ -12,7 +12,7 @@ is the [mime type](https://en.wikipedia.org/wiki/Media_type) "text/x-python").
 
 The code for metadata for the selected documents from the **BiblioAlly** Catalog is below. The metadata
 follows the convention to be a piece of Python code, usually a dictionary.
-```
+```python
 selected_corpus = base.documents_by(tagged_as=cat.TAG_SELECTED)
 metadata = [eval(d.attachment_by_name('Metadata').content) for d in selected_corpus]
 ```

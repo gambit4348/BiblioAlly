@@ -9,7 +9,7 @@ Those two methods accept specifying attribute names and values as parameters. At
 the equality operator is supported.
 
 The code for loading documents from the **BiblioAlly** Catalog is below.
-```
+```python
 document = catalog.document_by(id=128)
 if document is not None:
     print(f'found {document}')

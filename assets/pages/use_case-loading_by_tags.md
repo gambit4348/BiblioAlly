@@ -13,7 +13,7 @@ of documents).
 Those two methods accept specifying tags that the document must have (`tagged_as` parameter),
 tags that the document must not have (`untagged_as` parameter) or specific
 [attribute values](use_case-loading_by_attributes.md).
-```
+```python
 non_duplicates = catalog.documents_by(untagged_as=domain.TAG_DUPLICATE)
 print(f'found {len(non_duplicates)} non-duplicate documents')
 
@@ -27,7 +27,7 @@ print(f'found {len(selected_and_pre_selected)} documents SELECTED and PRE-SELECT
 Rejected documents are tagged as `TAG_REJECTED`. The rejection reason is also a tag, so documents
 rejected by a specific reason can be loaded by the same pattern, just specifying the
 reason.
-```
+```python
 only_offtopic = catalog.documents_by(tagged_as='Off-topic')
 print(f'found {len(only_offtopic)} documents tagged as "Off-topic"')
 ```
