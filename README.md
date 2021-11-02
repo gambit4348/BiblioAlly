@@ -10,7 +10,7 @@ can be considered to give a comprehensive support. However, even that is provide
 considered as helpful for those who have to produce a Literature Review.
 
 Detailed information about **BiblioAlly** can be found in its [wiki](https://github.com/gambit4348/BiblioAlly/wiki)
-page in GitHub.
+page on GitHub.
 
 ## Change log
 
