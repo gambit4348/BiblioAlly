@@ -1,7 +1,6 @@
 import unittest
 from unittest import TestCase
-from src.BiblioAlly import catalog as cat
-from src.BiblioAlly import domain, acmdl as acm, ieee as ieee, scopus as scopus, wos as wos
+from BiblioAlly import catalog as cat, domain, wos as wos, ieee as ieee, acmdl as acm, scopus as scopus
 
 bibtex_path = 'refs/'
 

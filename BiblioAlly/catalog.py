@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy.sql.expression import select
 
-from . import domain
+from BiblioAlly import domain
 
 TAG_SELECTED = 'Selected'
 TAG_DUPLICATE = 'Duplicate'

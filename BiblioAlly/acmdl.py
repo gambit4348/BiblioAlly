@@ -1,6 +1,4 @@
-from . import translator as bibtex
-from . import catalog as cat
-from . import domain
+from BiblioAlly import catalog as cat, domain, translator as bibtex
 
 
 class AcmDLTranslator(bibtex.Translator):

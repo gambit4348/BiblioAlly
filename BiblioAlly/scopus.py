@@ -1,69 +1,56 @@
-from . import translator as bibtex
-from . import catalog as cat
-from . import domain
+from BiblioAlly import catalog as cat, domain, translator as bibtex
 
 
-class IeeeXTranslator(bibtex.Translator):
+class ScopusTranslator(bibtex.Translator):
     def _document_from_proto_document(self, proto_document):
         bibtex.Translator._translate_kind(proto_document)
         kind = proto_document['type']
         fields = proto_document['field']
 
-        if 'title' in fields:
-            title = self._unbroken(self._uncurlied(fields['title']))
-        else:
-            title = ''
+        title = self._unbroken(self._uncurlied(fields['title']))
         if 'abstract' in fields:
             abstract = self._unbroken(self._uncurlied(fields['abstract']))
         else:
             abstract = ''
         year = int(fields['year'])
-        author_field = ''
         if 'author' in fields:
-            author_field = self._unbroken(self._all_uncurly(fields['author'].replace('}and', ' and')))
-        if author_field == '':
-            author_field = 'Author, Unamed'
+            author_field = self._unbroken(self._uncurlied(fields['author']))
+        else:
+            author_field = ''
         authors = self._authors_from_field(author_field)
-        affiliations = self._expand_affiliations(None, authors)
+        if 'affiliation' in fields:
+            affiliations = self._affiliations_from_field(self._all_uncurly(fields['affiliation']))
+        else:
+            affiliations = None
+        affiliations = self._expand_affiliations(affiliations, authors)
         keywords = []
-        if 'keywords' in fields:
-            all_keywords = self._all_uncurly(fields['keywords']).split(';')
+        if 'author_keywords' in fields:
+            all_keywords = self._all_uncurly(fields['author_keywords']).split(';')
             keyword_names = set()
             for keyword_name in all_keywords:
-                sub_keyword_names = keyword_name.split(',')
-                for sub_keyword_name in sub_keyword_names:
-                    name = sub_keyword_name.strip().capitalize()
-                    if name not in keyword_names:
-                        keyword_names.add(name)
+                name = keyword_name.strip().capitalize()
+                if name not in keyword_names:
+                    keyword_names.add(name)
             keyword_names = list(keyword_names)
             for keyword_name in keyword_names:
                 keywords.append(domain.Keyword(name=keyword_name))
         document = domain.Document(proto_document['id'].strip(), kind, title, abstract, keywords, year, affiliations)
-        document.generator = "IEEE Xplore"
-        if 'doi' in fields:
-            document.doi = self._uncurlied(fields['doi'])
-        if 'journal' in fields:
-            document.journal = self._uncurlied(fields['journal'])
-        elif 'booktitle' in fields and kind == 'inproceedings':
-            document.journal = self._uncurlied(fields['booktitle'])
-        if 'number' in fields:
-            if len(self._uncurlied(fields['number'])) > 0:
-                document.number = self._uncurlied(fields['number'])
-        if 'pages' in fields:
-            if len(self._uncurlied(fields['pages'])) > 0:
-                document.pages = self._uncurlied(fields['pages'])
-        if 'url' in fields:
-            if len(self._uncurlied(fields['url'])) > 0:
-                document.url = self._uncurlied(fields['url'])
-        if 'volume' in fields:
-            if len(self._uncurlied(fields['volume'])) > 0:
-                document.volume = self._uncurlied(fields['volume'])
+        document.generator = "Scopus"
+        if 'document_type' in fields:
+            document.document_type = self._uncurlied(fields['document_type'])
+        for name in ['doi', 'pages', 'url', 'volume', 'number', 'language', 'journal']:
+            if name in fields:
+                value = self._uncurlied(fields[name])
+                if len(value) > 0:
+                    setattr(document, name, value)
+        return document
+
         return document
 
     def _proto_document_from_document(self, document: domain.Document):
         kind = document.kind
         if kind == 'proceedings':
-            kind = 'inproceedings'
+            kind = 'conference'
         fields = dict()
         fields['external_key'] = document.external_key
 
@@ -74,11 +61,6 @@ class IeeeXTranslator(bibtex.Translator):
                         else doc_author.author.short_name) for doc_author in doc_authors]
         fields['author'] = self._curly(all_authors, separator=' and ')
 
-        if document.journal is not None:
-            if document.kind == 'article':
-                fields['journal'] = self._curly(str(document.journal))
-            else:
-                fields['booktitle'] = self._curly(str(document.journal))
         fields['title'] = self._curly(document.title)
 
         affiliations = []
@@ -92,7 +74,7 @@ class IeeeXTranslator(bibtex.Translator):
 
         fields['year'] = self._curly(str(document.year))
         if document.international_number is not None:
-            fields['ISSN'] = self._curly(str(document.international_number))
+            fields['issn'] = self._curly(str(document.international_number))
         if document.publisher is not None:
             fields['publisher'] = self._curly(str(document.publisher))
         if document.address is not None:
@@ -102,6 +84,8 @@ class IeeeXTranslator(bibtex.Translator):
         if document.international_number is not None:
             fields['url'] = self._curly(str(document.url))
         fields['abstract'] = self._curly(document.abstract)
+        if document.journal is not None:
+            fields['journal'] = self._curly(str(document.journal))
         if document.pages is not None:
             fields['pages'] = self._curly(str(document.pages))
         if document.volume is not None:
@@ -111,7 +95,7 @@ class IeeeXTranslator(bibtex.Translator):
         if document.language is not None:
             fields['language'] = self._curly(str(document.language))
         keywords = [keyword.name for keyword in document.keywords]
-        fields['keywords'] = self._curly(keywords, ';')
+        fields['author_keywords'] = self._curly(keywords, ';  ')
         if len(document.references) > 0:
             fields['references'] = self._curly('; '.join(document.references))
         if document.document_type is not None:
@@ -132,9 +116,9 @@ class IeeeXTranslator(bibtex.Translator):
         key_value = []
         for key, value in fields.items():
             key_value.append(f'{key}={value}')
-        bibtex = f'@{kind}' + '{' + f'{external_key},\n' + ',\n'.join(key_value) + '\n}'
+        bibtex = f'@{kind}' + '{' + f'{external_key},\n' + ',\n'.join(key_value) + '\n}\n'
         return bibtex
 
 
-IeeeXplore = "IeeeXplore"
-cat.Catalog.translators[IeeeXplore] = IeeeXTranslator
+Scopus = "Scopus"
+cat.Catalog.translators[Scopus] = ScopusTranslator

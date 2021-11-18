@@ -1,4 +1,4 @@
-from . import domain, basetranslator as bt
+from . import basetranslator as bt, domain
 import re
 from typing import Dict
 from .utility import alphanum_crc32

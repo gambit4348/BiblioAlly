@@ -7,8 +7,7 @@ import PySimpleGUI as sg
 import matplotlib as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PySimpleGUI import LISTBOX_SELECT_MODE_MULTIPLE
-from . import catalog as cat
-from . import domain
+from BiblioAlly import catalog as cat, domain
 
 BUTTON_EXIT = '-EXIT-'
 
