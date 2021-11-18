@@ -10,7 +10,7 @@ setup(
   author='Alex Sebastião Constâncio',
   author_email='gambit4348@gmail.com',
   url='https://github.com/gambit4348/BiblioAlly',
-  download_url='https://github.com/gambit4348/BiblioAlly/archive/refs/tags/v0.0.3.tar.gz',
+  download_url='https://github.com/gambit4348/BiblioAlly/archive/refs/tags/v0.0.4.tar.gz',
   keywords=['Science', 'Literature review', 'Articles'],
   install_requires=[
     'arpeggio',
